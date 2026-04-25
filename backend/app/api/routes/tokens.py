@@ -144,11 +144,59 @@ async def get_token_status(token_id: str) -> TokenStatusResponse:
     "/{token_id}/cancel",
     response_model=CancelTokenResponse,
     summary="Cancel token",
-    description="Placeholder endpoint for patient token cancellation. Database logic comes later.",
+    description="Cancel a WAITING or CALLED token. Reorders remaining queue positions.",
+    responses={
+        200: {"description": "Token cancelled successfully"},
+        400: {"description": "Invalid token_id or token cannot be cancelled"},
+        404: {"description": "Token not found"},
+    },
 )
 async def cancel_token(token_id: str) -> CancelTokenResponse:
+    token_object_id = _parse_object_id(token_id, "token_id")
+    token = await QueueToken.get(token_object_id)
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token not found",
+        )
+
+    terminal = {QueueStatus.COMPLETED, QueueStatus.CANCELLED, QueueStatus.NO_SHOW}
+    if token.status in terminal:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Token is already {token.status.value}",
+        )
+
+    if token.status not in {QueueStatus.WAITING, QueueStatus.CALLED}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot cancel token with status {token.status.value}",
+        )
+
+    old_position = token.position
+    now = datetime.now(timezone.utc)
+
+    token.status = QueueStatus.CANCELLED
+    token.position = 0
+    token.est_wait_mins = 0
+    token.updated_at = now
+    await token.save()
+
+    # Reorder WAITING tokens that were behind this one
+    behind = await QueueToken.find(
+        QueueToken.clinic_id == token.clinic_id,
+        QueueToken.date == token.date,
+        QueueToken.status == QueueStatus.WAITING,
+        QueueToken.position > old_position,
+    ).sort("+position").to_list()
+
+    for t in behind:
+        t.position -= 1
+        t.updated_at = now
+        await t.save()
+
     return CancelTokenResponse(
-        token_id=token_id,
-        status=QueueStatus.CANCELLED,
-        updated_at="2026-01-01T00:00:00Z",
+        token_id=str(token.id),
+        status=token.status,
+        updated_at=token.updated_at,
     )
