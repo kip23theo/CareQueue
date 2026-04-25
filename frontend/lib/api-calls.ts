@@ -46,12 +46,21 @@ function withData<T>(res: AxiosResponse<unknown>, data: T): AxiosResponse<T> {
   return { ...res, data }
 }
 
+export function resolveMediaUrl(value: string | null | undefined): string | null {
+  if (!value) return null
+  const normalized = value.trim()
+  if (!normalized) return null
+  if (/^(?:https?:|data:|blob:)/i.test(normalized)) return normalized
+  if (normalized.startsWith('/')) return `${BASE_URL}${normalized}`
+  return `${BASE_URL}/${normalized}`
+}
+
 function toClinic(raw: unknown): Clinic {
   const c = (raw ?? {}) as Partial<Clinic> & { id?: string; queue_count?: number }
   return {
     _id: c._id ?? c.id ?? '',
     name: c.name ?? 'Clinic',
-    clinic_image: c.clinic_image ?? null,
+    clinic_image: resolveMediaUrl(c.clinic_image),
     address: c.address ?? '',
     location: c.location ?? { type: 'Point', coordinates: [0, 0] },
     google_maps_link: c.google_maps_link ?? null,
@@ -67,6 +76,22 @@ function toClinic(raw: unknown): Clinic {
     distance_km: c.distance_km,
     queue_length: c.queue_length ?? c.queue_count,
     est_wait_mins: c.est_wait_mins,
+  }
+}
+
+function toDoctor(raw: unknown): Doctor {
+  const doctor = (raw ?? {}) as Partial<Doctor> & { id?: string }
+  return {
+    _id: doctor._id ?? doctor.id ?? '',
+    clinic_id: doctor.clinic_id ?? '',
+    user_id: doctor.user_id ?? '',
+    name: doctor.name ?? 'Doctor',
+    doctor_image: resolveMediaUrl(doctor.doctor_image),
+    specialization: doctor.specialization ?? 'General Physician',
+    avg_consult_mins: doctor.avg_consult_mins ?? 10,
+    is_available: doctor.is_available ?? true,
+    delay_mins: doctor.delay_mins ?? 0,
+    completed_today: doctor.completed_today ?? 0,
   }
 }
 
@@ -196,7 +221,7 @@ function toSuperAdminClinic(raw: unknown): SuperAdminClinic {
   return {
     id: clinic.id ?? '',
     name: clinic.name ?? 'Clinic',
-    clinic_image: clinic.clinic_image ?? null,
+    clinic_image: resolveMediaUrl(clinic.clinic_image),
     address: clinic.address ?? '',
     phone: clinic.phone ?? '',
     latitude: clinic.latitude ?? null,
@@ -411,7 +436,9 @@ export const clinicsApi = {
   getLiveQueue: (id: string) =>
     api.get<unknown>(`/clinics/${id}/queue/live`).then((res) => withData(res, toLiveQueue(res.data))),
   getDoctors: (id: string) =>
-    api.get<Doctor[]>(`/clinics/${id}/doctors`),
+    api.get<unknown[]>(`/clinics/${id}/doctors`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toDoctor))
+    ),
 }
 
 // ── Queue tokens (patient) ──────────────────────────────
@@ -573,7 +600,19 @@ export const doctorsApi = {
       withData(res, { message: 'Delay updated' })
     ),
   getAll: (clinicId: string) =>
-    api.get<Doctor[]>(`/admin/clinics/${clinicId}/doctors`),
+    api.get<unknown[]>(`/admin/clinics/${clinicId}/doctors`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toDoctor))
+    ),
+}
+
+export const uploadsApi = {
+  uploadImage: (file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    return api.post<{ file_id: string; file_path: string }>('/uploads/image', body, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 // ── Clinic admin ────────────────────────────────────────

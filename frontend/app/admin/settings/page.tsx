@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getUser } from '@/lib/auth'
-import { clinicAdminApi, clinicsApi } from '@/lib/api-calls'
+import { clinicAdminApi, clinicsApi, resolveMediaUrl, uploadsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ export default function AdminSettingsPage() {
   const user = getUser()
   const { success, error: toastError } = useToast()
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingClinicImage, setIsUploadingClinicImage] = useState(false)
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -124,6 +125,27 @@ export default function AdminSettingsPage() {
     )
   }
 
+  const handleClinicImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingClinicImage(true)
+    try {
+      const { data } = await uploadsApi.uploadImage(file)
+      setForm((prev) => ({ ...prev, clinic_image: data.file_path }))
+      success('Clinic image uploaded')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to upload clinic image')
+      } else {
+        toastError('Unable to upload clinic image')
+      }
+    } finally {
+      setIsUploadingClinicImage(false)
+      event.target.value = ''
+    }
+  }
+
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold font-heading text-surface-900 mb-6">Clinic Settings</h1>
@@ -139,13 +161,33 @@ export default function AdminSettingsPage() {
               placeholder="City Clinic" />
           </div>
           <div>
-            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Clinic Image URL</Label>
+            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Clinic Image</Label>
             <Input
-              value={form.clinic_image}
-              onChange={e => setForm(f => ({ ...f, clinic_image: e.target.value }))}
+              type="file"
+              accept="image/*"
+              onChange={handleClinicImageUpload}
               className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
-              placeholder="https://example.com/clinic.jpg"
+              disabled={isUploadingClinicImage}
             />
+            {isUploadingClinicImage && <p className="mt-1 text-xs text-surface-500">Uploading image...</p>}
+            {form.clinic_image && (
+              <div className="mt-2 flex items-center gap-3">
+                <img
+                  src={resolveMediaUrl(form.clinic_image) ?? ''}
+                  alt="Clinic preview"
+                  className="h-12 w-12 rounded-lg border border-surface-200 object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-lg"
+                  onClick={() => setForm((f) => ({ ...f, clinic_image: '' }))}
+                >
+                  Remove image
+                </Button>
+              </div>
+            )}
           </div>
           <div>
             <Label className="block text-xs font-medium text-surface-600 mb-1.5">Address</Label>
@@ -278,7 +320,7 @@ export default function AdminSettingsPage() {
           </div>
         </Card>
 
-        <Button type="submit" disabled={isSaving}
+        <Button type="submit" disabled={isSaving || isUploadingClinicImage}
           className="w-full h-11 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25">
           {isSaving ? <><Loader2 size={18} className="animate-spin" />Saving...</> : <><Save size={18} />Save Settings</>}
         </Button>

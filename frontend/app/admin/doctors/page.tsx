@@ -2,11 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getUser } from '@/lib/auth'
-import { authApi, doctorsApi } from '@/lib/api-calls'
+import { authApi, doctorsApi, resolveMediaUrl, uploadsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Doctor } from '@/types'
@@ -82,8 +89,12 @@ export default function AdminDoctorsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isAddingDoctor, setIsAddingDoctor] = useState(false)
   const [isInvitingDoctor, setIsInvitingDoctor] = useState(false)
+  const [isUploadingAddImage, setIsUploadingAddImage] = useState(false)
+  const [isUploadingInviteImage, setIsUploadingInviteImage] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [delayEditing, setDelayEditing] = useState<Record<string, number>>({})
+  const [isAddDoctorDialogOpen, setIsAddDoctorDialogOpen] = useState(false)
+  const [isInviteDoctorDialogOpen, setIsInviteDoctorDialogOpen] = useState(false)
   const [addDoctorForm, setAddDoctorForm] = useState<AddDoctorFormState>(INITIAL_ADD_FORM)
   const [inviteDoctorForm, setInviteDoctorForm] = useState<InviteDoctorFormState>(INITIAL_INVITE_FORM)
   const [inviteCredentials, setInviteCredentials] = useState<InviteCredentials | null>(null)
@@ -143,6 +154,7 @@ export default function AdminDoctorsPage() {
         doctor_image: trimmedImage || undefined,
       })
       setAddDoctorForm(INITIAL_ADD_FORM)
+      setIsAddDoctorDialogOpen(false)
       success(`Doctor account created for ${trimmedName}`)
       await refreshDoctors().catch(() => {})
     } catch (err) {
@@ -193,6 +205,7 @@ export default function AdminDoctorsPage() {
         loginUrl,
       })
       setInviteDoctorForm(INITIAL_INVITE_FORM)
+      setIsInviteDoctorDialogOpen(false)
       success(`Invite prepared for ${trimmedName}`)
       await refreshDoctors().catch(() => {})
     } catch (err) {
@@ -211,6 +224,48 @@ export default function AdminDoctorsPage() {
       success('Invite message copied')
     } catch {
       toastError('Could not copy invite message')
+    }
+  }
+
+  const handleAddDoctorImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingAddImage(true)
+    try {
+      const { data } = await uploadsApi.uploadImage(file)
+      setAddDoctorForm((prev) => ({ ...prev, doctor_image: data.file_path }))
+      success('Doctor photo uploaded')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to upload doctor photo')
+      } else {
+        toastError('Unable to upload doctor photo')
+      }
+    } finally {
+      setIsUploadingAddImage(false)
+      event.target.value = ''
+    }
+  }
+
+  const handleInviteDoctorImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingInviteImage(true)
+    try {
+      const { data } = await uploadsApi.uploadImage(file)
+      setInviteDoctorForm((prev) => ({ ...prev, doctor_image: data.file_path }))
+      success('Doctor photo uploaded')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to upload doctor photo')
+      } else {
+        toastError('Unable to upload doctor photo')
+      }
+    } finally {
+      setIsUploadingInviteImage(false)
+      event.target.value = ''
     }
   }
 
@@ -254,10 +309,46 @@ export default function AdminDoctorsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 mb-6">
         <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <UserPlus2 size={16} className="text-brand-500" />
             <h2 className="font-semibold font-heading text-surface-900">Add Doctor</h2>
           </div>
+          <p className="text-sm text-surface-500 mb-4">Create a doctor account from a pop-up form.</p>
+          <Button
+            type="button"
+            className="h-10 rounded-xl bg-brand-500 text-white hover:bg-brand-600"
+            onClick={() => setIsAddDoctorDialogOpen(true)}
+          >
+            <UserPlus2 size={14} />
+            Add doctor
+          </Button>
+        </Card>
+
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <MailPlus size={16} className="text-brand-500" />
+            <h2 className="font-semibold font-heading text-surface-900">Invite Doctor</h2>
+          </div>
+          <p className="text-sm text-surface-500 mb-4">Generate invite credentials through a dialog.</p>
+          <Button
+            type="button"
+            className="h-10 rounded-xl bg-surface-900 text-white hover:bg-surface-700"
+            onClick={() => setIsInviteDoctorDialogOpen(true)}
+          >
+            <MailPlus size={14} />
+            Invite doctor
+          </Button>
+        </Card>
+      </div>
+
+      <Dialog open={isAddDoctorDialogOpen} onOpenChange={setIsAddDoctorDialogOpen}>
+        <DialogContent className="max-w-lg rounded-2xl border border-surface-200 bg-white">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-surface-900">Add Doctor</DialogTitle>
+            <DialogDescription className="text-sm text-surface-500">
+              Create a direct login for a doctor in your clinic.
+            </DialogDescription>
+          </DialogHeader>
           <form className="space-y-3" onSubmit={handleAddDoctor}>
             <div>
               <Label className="mb-1.5 block text-xs font-medium text-surface-600">Name</Label>
@@ -321,30 +412,54 @@ export default function AdminDoctorsPage() {
               </div>
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Image URL (optional)</Label>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Doctor photo (optional)</Label>
               <Input
-                value={addDoctorForm.doctor_image}
-                onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, doctor_image: e.target.value }))}
-                placeholder="https://example.com/doctor.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleAddDoctorImageUpload}
                 className="h-10 rounded-xl border-surface-200"
+                disabled={isUploadingAddImage}
               />
+              {isUploadingAddImage && <p className="mt-1 text-xs text-surface-500">Uploading image...</p>}
+              {addDoctorForm.doctor_image && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img
+                    src={resolveMediaUrl(addDoctorForm.doctor_image) ?? ''}
+                    alt="Doctor preview"
+                    className="h-10 w-10 rounded-lg border border-surface-200 object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-lg"
+                    onClick={() => setAddDoctorForm((prev) => ({ ...prev, doctor_image: '' }))}
+                  >
+                    Remove photo
+                  </Button>
+                </div>
+              )}
             </div>
             <Button
               type="submit"
-              disabled={isAddingDoctor}
+              disabled={isAddingDoctor || isUploadingAddImage}
               className="w-full h-10 rounded-xl bg-brand-500 text-white hover:bg-brand-600"
             >
               {isAddingDoctor ? <Loader2 size={14} className="animate-spin" /> : <UserPlus2 size={14} />}
               Create doctor account
             </Button>
           </form>
-        </Card>
+        </DialogContent>
+      </Dialog>
 
-        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <MailPlus size={16} className="text-brand-500" />
-            <h2 className="font-semibold font-heading text-surface-900">Invite Doctor</h2>
-          </div>
+      <Dialog open={isInviteDoctorDialogOpen} onOpenChange={setIsInviteDoctorDialogOpen}>
+        <DialogContent className="max-w-lg rounded-2xl border border-surface-200 bg-white">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-surface-900">Invite Doctor</DialogTitle>
+            <DialogDescription className="text-sm text-surface-500">
+              Generate temporary credentials and share them with the doctor.
+            </DialogDescription>
+          </DialogHeader>
           <form className="space-y-3" onSubmit={handleInviteDoctor}>
             <div>
               <Label className="mb-1.5 block text-xs font-medium text-surface-600">Name</Label>
@@ -396,42 +511,63 @@ export default function AdminDoctorsPage() {
               </div>
             </div>
             <div>
-              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Image URL (optional)</Label>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Doctor photo (optional)</Label>
               <Input
-                value={inviteDoctorForm.doctor_image}
-                onChange={(e) => setInviteDoctorForm((prev) => ({ ...prev, doctor_image: e.target.value }))}
-                placeholder="https://example.com/doctor.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleInviteDoctorImageUpload}
                 className="h-10 rounded-xl border-surface-200"
+                disabled={isUploadingInviteImage}
               />
+              {isUploadingInviteImage && <p className="mt-1 text-xs text-surface-500">Uploading image...</p>}
+              {inviteDoctorForm.doctor_image && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img
+                    src={resolveMediaUrl(inviteDoctorForm.doctor_image) ?? ''}
+                    alt="Doctor preview"
+                    className="h-10 w-10 rounded-lg border border-surface-200 object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-lg"
+                    onClick={() => setInviteDoctorForm((prev) => ({ ...prev, doctor_image: '' }))}
+                  >
+                    Remove photo
+                  </Button>
+                </div>
+              )}
             </div>
             <Button
               type="submit"
-              disabled={isInvitingDoctor}
+              disabled={isInvitingDoctor || isUploadingInviteImage}
               className="w-full h-10 rounded-xl bg-surface-900 text-white hover:bg-surface-700"
             >
               {isInvitingDoctor ? <Loader2 size={14} className="animate-spin" /> : <MailPlus size={14} />}
               Generate invite credentials
             </Button>
           </form>
-          {inviteCredentials && (
-            <div className="mt-4 rounded-xl border border-surface-200 bg-surface-50 p-3">
-              <p className="text-xs font-semibold text-surface-700">Latest invite</p>
-              <p className="text-xs text-surface-600 mt-1 break-words">{inviteCredentials.email}</p>
-              <p className="text-xs text-surface-600 break-words">Temp password: {inviteCredentials.password}</p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="mt-2 rounded-lg bg-white border border-surface-200"
-                onClick={handleCopyInviteMessage}
-              >
-                <ClipboardCopy size={13} />
-                Copy invite message
-              </Button>
-            </div>
-          )}
+        </DialogContent>
+      </Dialog>
+
+      {inviteCredentials && (
+        <Card className="mb-6 rounded-2xl border border-surface-200 bg-surface-50 p-3">
+          <p className="text-xs font-semibold text-surface-700">Latest invite</p>
+          <p className="text-xs text-surface-600 mt-1 break-words">{inviteCredentials.email}</p>
+          <p className="text-xs text-surface-600 break-words">Temp password: {inviteCredentials.password}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="mt-2 rounded-lg bg-white border border-surface-200"
+            onClick={handleCopyInviteMessage}
+          >
+            <ClipboardCopy size={13} />
+            Copy invite message
+          </Button>
         </Card>
-      </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-3">

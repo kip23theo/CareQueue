@@ -6,7 +6,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import { Activity, Eye, EyeOff, Loader2, LocateFixed, Plus, Trash2 } from 'lucide-react'
 
-import { authApi } from '@/lib/api-calls'
+import { authApi, resolveMediaUrl, uploadsApi } from '@/lib/api-calls'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -42,6 +42,8 @@ function emptyStaff(role: 'doctor' | 'receptionist' = 'doctor'): StaffDraft {
 export default function RegisterClinicPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploadingClinicImage, setIsUploadingClinicImage] = useState(false)
+  const [isUploadingStaffImage, setIsUploadingStaffImage] = useState<Record<number, boolean>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -73,10 +75,54 @@ export default function RegisterClinicPage() {
   const removeStaff = (idx: number) => {
     setStaff((prev) => prev.filter((_, i) => i !== idx))
     setShowStaffPasswords({})
+    setIsUploadingStaffImage({})
   }
 
   const toggleStaffPassword = (idx: number) => {
     setShowStaffPasswords((prev) => ({ ...prev, [idx]: !prev[idx] }))
+  }
+
+  const handleClinicImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingClinicImage(true)
+    try {
+      const { data } = await uploadsApi.uploadImage(file)
+      setClinicImage(data.file_path)
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail ?? 'Failed to upload clinic image')
+      } else {
+        setError('Failed to upload clinic image')
+      }
+    } finally {
+      setIsUploadingClinicImage(false)
+      event.target.value = ''
+    }
+  }
+
+  const handleStaffDoctorImageUpload = async (
+    idx: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingStaffImage((prev) => ({ ...prev, [idx]: true }))
+    try {
+      const { data } = await uploadsApi.uploadImage(file)
+      updateStaff(idx, { doctor_image: data.file_path })
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail ?? 'Failed to upload doctor image')
+      } else {
+        setError('Failed to upload doctor image')
+      }
+    } finally {
+      setIsUploadingStaffImage((prev) => ({ ...prev, [idx]: false }))
+      event.target.value = ''
+    }
   }
 
   const handleUseCurrentLocation = () => {
@@ -149,6 +195,8 @@ export default function RegisterClinicPage() {
     }
   }
 
+  const isAnyStaffImageUploading = Object.values(isUploadingStaffImage).some(Boolean)
+
   return (
     <div className="min-h-screen bg-surface-100 px-4 py-8">
       <div className="max-w-3xl mx-auto">
@@ -183,12 +231,26 @@ export default function RegisterClinicPage() {
             </div>
 
             <div>
-              <Label className="mb-1.5 block">Clinic Image URL</Label>
+              <Label className="mb-1.5 block">Clinic Image</Label>
               <Input
-                value={clinicImage}
-                onChange={(e) => setClinicImage(e.target.value)}
-                placeholder="https://example.com/clinic.jpg"
+                type="file"
+                accept="image/*"
+                onChange={handleClinicImageUpload}
+                disabled={isUploadingClinicImage}
               />
+              {isUploadingClinicImage && <p className="mt-1 text-xs text-surface-500">Uploading image...</p>}
+              {clinicImage && (
+                <div className="mt-2 flex items-center gap-3">
+                  <img
+                    src={resolveMediaUrl(clinicImage) ?? ''}
+                    alt="Clinic preview"
+                    className="h-12 w-12 rounded-lg border border-surface-200 object-cover"
+                  />
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setClinicImage('')}>
+                    Remove image
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -336,11 +398,31 @@ export default function RegisterClinicPage() {
 
                     <div>
                       <Input
-                        value={entry.role === 'doctor' ? entry.doctor_image : ''}
-                        onChange={(e) => updateStaff(idx, { doctor_image: e.target.value })}
-                        placeholder="Doctor image URL (optional)"
-                        disabled={entry.role !== 'doctor'}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleStaffDoctorImageUpload(idx, e)}
+                        disabled={entry.role !== 'doctor' || Boolean(isUploadingStaffImage[idx])}
                       />
+                      {entry.role === 'doctor' && isUploadingStaffImage[idx] && (
+                        <p className="mt-1 text-xs text-surface-500">Uploading doctor image...</p>
+                      )}
+                      {entry.role === 'doctor' && entry.doctor_image && (
+                        <div className="mt-2 flex items-center gap-3">
+                          <img
+                            src={resolveMediaUrl(entry.doctor_image) ?? ''}
+                            alt="Doctor preview"
+                            className="h-10 w-10 rounded-lg border border-surface-200 object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => updateStaff(idx, { doctor_image: '' })}
+                          >
+                            Remove image
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -352,7 +434,11 @@ export default function RegisterClinicPage() {
           {success && <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{success}</div>}
 
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={isSubmitting} className="h-11 rounded-xl bg-brand-500 hover:bg-brand-600 text-white">
+            <Button
+              type="submit"
+              disabled={isSubmitting || isUploadingClinicImage || isAnyStaffImageUploading}
+              className="h-11 rounded-xl bg-brand-500 hover:bg-brand-600 text-white"
+            >
               {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Creating...</> : 'Create Clinic'}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.push('/auth/login')} className="h-11 rounded-xl">

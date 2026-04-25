@@ -169,8 +169,16 @@ export default function PatientHome() {
                 onClick={() => router.push('/patient/clinics')}
                 className="h-11 rounded-xl bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600"
               >
-                Search / Explore
+                Explore clinics
                 <ArrowRight size={16} />
+              </Button>
+
+              <Button
+                onClick={() => router.push('/patient/doctors')}
+                variant="outline"
+                className="h-11 rounded-xl border-surface-300 bg-white px-5 text-sm font-semibold text-surface-700 hover:bg-surface-100"
+              >
+                Find doctors
               </Button>
 
               {isPatient && (
@@ -186,7 +194,7 @@ export default function PatientHome() {
 
             <div className="mt-6 flex items-center gap-2 text-sm text-surface-600">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              Location is only requested when you open search and explore.
+              Location is only requested when you open clinics or doctors search.
             </div>
 
             <div className="mt-7 grid gap-3 sm:grid-cols-3">
@@ -322,7 +330,7 @@ export default function PatientHome() {
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Start Now</p>
                 <h3 className="mt-1 text-2xl font-bold text-surface-900">Pick your clinic in under a minute</h3>
                 <p className="mt-2 text-sm leading-relaxed text-surface-600">
-                  Compare wait times, choose your doctor, and join instantly.
+                  Compare wait times, choose a clinic or doctor, and join instantly.
                 </p>
               </div>
 
@@ -331,8 +339,16 @@ export default function PatientHome() {
                   onClick={() => router.push('/patient/clinics')}
                   className="h-11 w-full rounded-xl bg-brand-500 text-sm font-semibold text-white hover:bg-brand-600"
                 >
-                  Search / Explore near me
+                  Explore clinics near me
                   <ArrowRight size={16} />
+                </Button>
+
+                <Button
+                  onClick={() => router.push('/patient/doctors')}
+                  variant="outline"
+                  className="h-11 w-full rounded-xl border-surface-300 bg-white text-sm font-semibold text-surface-700 hover:bg-surface-100"
+                >
+                  Find doctors near me
                 </Button>
 
                 {isPatient && (

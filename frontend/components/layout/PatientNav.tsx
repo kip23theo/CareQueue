@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { Activity, Bell, ChevronDown, Compass, Home, LayoutDashboard, LogOut, Star, User } from 'lucide-react'
+import { Activity, Bell, ChevronDown, Compass, Home, LayoutDashboard, LogOut, Star, Stethoscope, User } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { getUser, logout, subscribeAuth } from '@/lib/auth'
@@ -22,10 +22,17 @@ const quickLinks = [
   },
   {
     href: '/patient/clinics',
-    label: 'Explore',
+    label: 'Clinics',
     icon: Compass,
     match: (path: string) =>
-      path === '/patient/clinics' || path.startsWith('/patient/clinic/') || path.startsWith('/patient/doctor/'),
+      path === '/patient/clinics' || path.startsWith('/patient/clinic/'),
+  },
+  {
+    href: '/patient/doctors',
+    label: 'Doctors',
+    icon: Stethoscope,
+    match: (path: string) =>
+      path === '/patient/doctors' || path.startsWith('/patient/doctor/'),
   },
 ]
 
@@ -39,10 +46,15 @@ const mobileLinks = [
   },
   {
     href: '/patient/clinics',
-    label: 'Explore',
+    label: 'Clinics',
     icon: Compass,
-    match: (path: string) =>
-      path === '/patient/clinics' || path.startsWith('/patient/clinic/') || path.startsWith('/patient/doctor/'),
+    match: (path: string) => path === '/patient/clinics' || path.startsWith('/patient/clinic/'),
+  },
+  {
+    href: '/patient/doctors',
+    label: 'Doctors',
+    icon: Stethoscope,
+    match: (path: string) => path === '/patient/doctors' || path.startsWith('/patient/doctor/'),
   },
   {
     href: '/patient/dashboard',
@@ -217,7 +229,7 @@ export function PatientNav({ myTokenId }: Props) {
 
       {isPatient && (
         <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200/90 bg-white/95 backdrop-blur md:hidden">
-          <div className="mx-auto grid h-16 max-w-6xl grid-cols-3 gap-1 px-2">
+          <div className="mx-auto grid h-16 max-w-6xl grid-cols-4 gap-1 px-2">
             {mobileLinks.map((item) => {
               const active = item.match(pathname)
               const Icon = item.icon

@@ -15,6 +15,7 @@ from app.api.routes.patients import router as patients_router
 from app.api.routes.platform_feedback import router as platform_feedback_router
 from app.api.routes.reviews import router as reviews_router
 from app.api.routes.super_admin import router as super_admin_router
+from app.api.routes.uploads import router as uploads_router
 from app.core.config import get_settings
 from app.api.routes.tokens import router as tokens_router
 from app.db.mongodb import close_mongo_connection, connect_to_mongo
@@ -59,6 +60,7 @@ app.include_router(notifications_router)
 app.include_router(patients_router)
 app.include_router(reviews_router)
 app.include_router(platform_feedback_router)
+app.include_router(uploads_router)
 
 
 @app.on_event("startup")
