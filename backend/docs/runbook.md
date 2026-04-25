@@ -1,6 +1,6 @@
 # ClinicFlow Backend Runbook
 
-Use this guide to set up, run, seed, and test the FastAPI backend locally.
+Use this guide to set up and run the FastAPI backend locally.
 
 ## Prerequisites
 
@@ -47,37 +47,7 @@ ANTHROPIC_API_KEY="<optional for now>"
 
 Never commit `backend/.env`. It contains secrets and is ignored by git.
 
-## 5. Initialize MongoDB Indexes
-
-This initializes Beanie ODM models and creates MongoDB indexes.
-
-```bash
-python scripts/init_db.py
-```
-
-Expected output:
-
-```text
-Beanie ODM indexes initialized for database: carequeue
-```
-
-## 6. Seed Demo Data
-
-Use this when you need local/demo data for clinic endpoints.
-
-```bash
-python scripts/seed_data.py
-```
-
-This creates:
-
-- 3 demo clinics
-- 5 demo doctors
-- 8 queue tokens for the primary demo clinic
-
-The script is safe to rerun because it deletes its own demo records first.
-
-## 7. Run Backend Server
+## 5. Run Backend Server
 
 ```bash
 uvicorn app.main:app --reload
@@ -95,7 +65,7 @@ Swagger docs:
 http://127.0.0.1:8000/docs
 ```
 
-## 8. Test Main Clinic Endpoints
+## 6. Test Main Clinic Endpoints
 
 Nearby clinics:
 
@@ -127,6 +97,19 @@ GET /health
 - Valid ObjectId with no clinic returns `404`
 - Empty data returns an empty list
 - ObjectIds are returned as strings
+
+## Database Maintenance
+
+The team uses a shared MongoDB Atlas database. Most teammates should not run database init or seed scripts during normal setup.
+
+Only run these when the backend owner asks you to refresh indexes or demo data:
+
+```bash
+python scripts/init_db.py
+python scripts/seed_data.py
+```
+
+`seed_data.py` changes shared demo data, so coordinate before running it.
 
 ## Git Rules
 
