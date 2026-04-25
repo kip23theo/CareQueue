@@ -6,6 +6,7 @@ import type { Clinic, QueueToken } from '@/types'
 interface Location {
   lat: number
   lng: number
+  label?: string
 }
 
 interface PatientContextValue {

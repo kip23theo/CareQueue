@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useSyncExternalStore } from 'react'
 import { ArrowLeft, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { getUser, logout } from '@/lib/auth'
+import { getUser, logout, subscribeAuth } from '@/lib/auth'
 
 interface Props {
   myTokenId?: string
@@ -14,7 +15,12 @@ interface Props {
 export function PatientNav({ myTokenId }: Props) {
   const pathname = usePathname()
   const router = useRouter()
-  const user = getUser()
+  const user = useSyncExternalStore(
+    subscribeAuth,
+    getUser,
+    () => null
+  )
+
   const isPatient = user?.role === 'patient'
 
   const isDeep = pathname !== '/patient' && pathname !== '/patient/clinics'

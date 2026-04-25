@@ -36,7 +36,11 @@ export default function PatientHome() {
     setLocationError(null)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          label: 'Current location',
+        })
         setIsLocating(false)
         router.push('/patient/clinics')
       },
@@ -48,7 +52,7 @@ export default function PatientHome() {
   }
 
   const handleCitySelect = (city: typeof CITY_PRESETS[0]) => {
-    setLocation({ lat: city.lat, lng: city.lng })
+    setLocation({ lat: city.lat, lng: city.lng, label: city.name })
     router.push('/patient/clinics')
   }
 

@@ -6,6 +6,7 @@ import { clinicsApi, tokensApi } from '@/lib/api-calls'
 import { usePatient } from '@/context/PatientContext'
 import { useToast } from '@/context/ToastContext'
 import { WaitTimeMeter } from '@/components/ui/WaitTimeMeter'
+import { buildGoogleMapsDirectionsUrl } from '@/lib/location'
 import { cn, formatWaitTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -15,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import type { Clinic, Doctor } from '@/types'
 import axios from 'axios'
-import { MapPin, Phone, Star, Clock, Users, Loader2, Stethoscope } from 'lucide-react'
+import { MapPin, Phone, Star, Clock, Users, Loader2, Stethoscope, Navigation } from 'lucide-react'
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={cn('skeleton rounded-xl', className)} />
@@ -24,7 +25,7 @@ function Skeleton({ className }: { className?: string }) {
 export default function ClinicDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { setMyToken, myToken } = usePatient()
+  const { location, setMyToken, myToken } = usePatient()
   const { success, error: toastError } = useToast()
   const [clinic, setClinic] = useState<Clinic | null>(null)
   const [doctors, setDoctors] = useState<Doctor[]>([])
@@ -57,9 +58,21 @@ export default function ClinicDetailPage() {
       }
     }
     load()
-  }, [id])
+  }, [id, toastError])
 
   const existingToken = myToken?.clinic_id === id ? myToken : null
+
+  const handleGetDirections = () => {
+    if (!clinic) return
+    const clinicLat = clinic.location?.coordinates?.[1]
+    const clinicLng = clinic.location?.coordinates?.[0]
+    if (!Number.isFinite(clinicLat) || !Number.isFinite(clinicLng)) return
+    const directionsUrl = buildGoogleMapsDirectionsUrl(
+      { lat: clinicLat as number, lng: clinicLng as number },
+      location ? { lat: location.lat, lng: location.lng } : undefined
+    )
+    window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+  }
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,6 +142,18 @@ export default function ClinicDetailPage() {
           <Star size={13} className="text-amber-400 fill-amber-400" />
           <span>{clinic.rating.toFixed(1)}</span>
         </div>
+
+        <Button
+          type="button"
+          onClick={handleGetDirections}
+          variant="outline"
+          size="sm"
+          disabled={!Number.isFinite(clinic.location?.coordinates?.[1]) || !Number.isFinite(clinic.location?.coordinates?.[0])}
+          className="h-9 rounded-xl border-surface-200 text-surface-700 mb-4"
+        >
+          <Navigation size={14} />
+          Get Directions
+        </Button>
 
         {/* Live stats */}
         <div className="grid grid-cols-3 gap-3">

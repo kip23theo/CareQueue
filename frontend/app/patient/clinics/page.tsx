@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import { usePatient } from '@/context/PatientContext'
 import { clinicsApi } from '@/lib/api-calls'
 import { aiApi } from '@/lib/api-calls'
+import {
+  reverseGeocodeLocation,
+  searchLocationSuggestions,
+  type LocationSuggestion,
+} from '@/lib/location'
 import { ClinicCard } from '@/components/ui/ClinicCard'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -26,7 +31,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import type { AIRecommendation } from '@/types'
-import { Search, Sparkles, X, Loader2 } from 'lucide-react'
+import { Search, Sparkles, X, Loader2, MapPin, LocateFixed } from 'lucide-react'
 import axios from 'axios'
 
 const SPECS = ['General', 'Paediatrics', 'ENT', 'Orthopaedics', 'Gynaecology', 'Cardiology']
@@ -34,6 +39,12 @@ const SORTS = [
   { value: 'nearest', label: 'Nearest' },
   { value: 'wait', label: 'Shortest wait' },
   { value: 'rating', label: 'Highest rated' },
+]
+const CITY_PRESETS = [
+  { name: 'Mumbai', lat: 19.076, lng: 72.877 },
+  { name: 'Delhi', lat: 28.679, lng: 77.069 },
+  { name: 'Bangalore', lat: 12.971, lng: 77.594 },
+  { name: 'Chennai', lat: 13.083, lng: 80.27 },
 ]
 
 function SkeletonCard() {
@@ -56,8 +67,13 @@ function SkeletonCard() {
 
 export default function ClinicsPage() {
   const router = useRouter()
-  const { location, nearbyClinics, setNearbyClinics } = usePatient()
+  const { location, setLocation, nearbyClinics, setNearbyClinics } = usePatient()
   const [isLoading, setIsLoading] = useState(true)
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [isLocationSearchLoading, setIsLocationSearchLoading] = useState(false)
+  const [locationQuery, setLocationQuery] = useState('')
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
+  const [locationError, setLocationError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('nearest')
   const [specFilter, setSpecFilter] = useState<string[]>([])
@@ -66,6 +82,11 @@ export default function ClinicsPage() {
   const [aiRecommendations, setAIRecommendations] = useState<AIRecommendation[]>([])
   const [isAILoading, setIsAILoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const activeLocationLabel = location?.label?.trim()
+    ? location.label
+    : location
+      ? `${location.lat.toFixed(3)}, ${location.lng.toFixed(3)}`
+      : ''
 
   useEffect(() => {
     if (!location) {
@@ -74,6 +95,7 @@ export default function ClinicsPage() {
     }
     const fetchClinics = async () => {
       setIsLoading(true)
+      setError(null)
       try {
         const { data } = await clinicsApi.getNearby({ lat: location.lat, lng: location.lng, radius: 5000 })
         setNearbyClinics(data)
@@ -86,7 +108,69 @@ export default function ClinicsPage() {
       }
     }
     fetchClinics()
-  }, [location])
+  }, [location, router, setNearbyClinics])
+
+  useEffect(() => {
+    const query = locationQuery.trim()
+    if (query.length < 2 || query === activeLocationLabel.trim()) {
+      return
+    }
+
+    const timer = window.setTimeout(async () => {
+      setIsLocationSearchLoading(true)
+      try {
+        const suggestions = await searchLocationSuggestions(query)
+        setLocationSuggestions(suggestions)
+      } catch {
+        setLocationSuggestions([])
+      } finally {
+        setIsLocationSearchLoading(false)
+      }
+    }, 300)
+
+    return () => window.clearTimeout(timer)
+  }, [locationQuery, activeLocationLabel])
+
+  const handleSelectLocation = (suggestion: LocationSuggestion) => {
+    setLocation({
+      lat: suggestion.lat,
+      lng: suggestion.lng,
+      label: suggestion.label,
+    })
+    setLocationQuery(suggestion.label)
+    setLocationSuggestions([])
+    setLocationError(null)
+  }
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported in this browser.')
+      return
+    }
+    setLocationError(null)
+    setIsDetectingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        let label = 'Current location'
+        try {
+          const detected = await reverseGeocodeLocation({ lat, lng })
+          if (detected) label = detected
+        } catch {
+          // ignore reverse geocoding failures
+        }
+        setLocation({ lat, lng, label })
+        setLocationQuery(label)
+        setLocationSuggestions([])
+        setIsDetectingLocation(false)
+      },
+      () => {
+        setLocationError('Location access denied. You can still search by area below.')
+        setIsDetectingLocation(false)
+      }
+    )
+  }
 
   const handleAIRecommend = async () => {
     if (!location || !symptoms.trim()) return
@@ -132,6 +216,90 @@ export default function ClinicsPage() {
     <div className="max-w-2xl mx-auto px-4 py-4">
       {/* Filter bar */}
       <div className="sticky top-14 z-30 bg-surface-50 py-3 space-y-3">
+        <Card className="rounded-2xl border border-surface-200 bg-white px-3 py-3 shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-surface-500 mb-2">
+            <MapPin size={13} className="text-brand-500 shrink-0" />
+            <p className="truncate">
+              Showing clinics near <span className="font-medium text-surface-700">{activeLocationLabel || 'your selected area'}</span>
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="text"
+                value={locationQuery}
+                onChange={(e) => {
+                  const nextQuery = e.target.value
+                  setLocationQuery(nextQuery)
+                  if (nextQuery.trim().length < 2 || nextQuery.trim() === activeLocationLabel.trim()) {
+                    setLocationSuggestions([])
+                  }
+                  setLocationError(null)
+                }}
+                placeholder="Search location..."
+                className="h-10 rounded-xl border-surface-200 bg-white px-3 text-sm"
+              />
+              {(isLocationSearchLoading || locationSuggestions.length > 0) && (
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-surface-200 bg-white shadow-lg p-1 max-h-56 overflow-y-auto">
+                  {isLocationSearchLoading ? (
+                    <div className="px-2 py-2 text-xs text-surface-500 flex items-center gap-2">
+                      <Loader2 size={12} className="animate-spin" />
+                      Searching locations...
+                    </div>
+                  ) : (
+                    locationSuggestions.map((suggestion) => (
+                      <button
+                        key={`${suggestion.lat}-${suggestion.lng}`}
+                        type="button"
+                        onClick={() => handleSelectLocation(suggestion)}
+                        className="w-full text-left px-2 py-2 rounded-lg hover:bg-surface-50 text-xs text-surface-700 leading-relaxed"
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <Button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={isDetectingLocation}
+              variant="outline"
+              className="h-10 rounded-xl border-surface-200 px-3 text-xs text-surface-700 whitespace-nowrap"
+            >
+              {isDetectingLocation ? (
+                <><Loader2 size={14} className="animate-spin" /> Locating...</>
+              ) : (
+                <><LocateFixed size={14} /> Use GPS</>
+              )}
+            </Button>
+          </div>
+
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            {CITY_PRESETS.map((city) => (
+              <Button
+                key={city.name}
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => handleSelectLocation({ lat: city.lat, lng: city.lng, label: city.name })}
+                className="h-7 rounded-full border-surface-200 bg-white text-[11px] text-surface-600 hover:border-brand-300 hover:text-brand-700"
+              >
+                {city.name}
+              </Button>
+            ))}
+          </div>
+
+          <p className="mt-2 text-[11px] text-surface-400">
+            Search suggestions are powered by OpenStreetMap.
+          </p>
+          {locationError && (
+            <p className="mt-1 text-xs text-red-600">{locationError}</p>
+          )}
+        </Card>
+
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
@@ -230,6 +398,7 @@ export default function ClinicsPage() {
                 clinic={clinic}
                 isBestMatch={aiRec?.rank === 1}
                 aiReason={aiRec?.reason}
+                userLocation={location}
                 onSelect={() => router.push(`/patient/clinic/${clinic._id}`)}
               />
             )

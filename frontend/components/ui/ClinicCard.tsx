@@ -1,13 +1,17 @@
 'use client'
 
+import type { MouseEvent } from 'react'
 import { cn, formatDistance, formatWaitTime } from '@/lib/utils'
+import { buildGoogleMapsDirectionsUrl } from '@/lib/location'
 import type { Clinic } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Clock, Star, ChevronRight, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { MapPin, Clock, Star, ChevronRight, Zap, Navigation } from 'lucide-react'
 
 interface Props {
   clinic: Clinic
+  userLocation?: { lat: number; lng: number } | null
   onSelect?: () => void
   isBestMatch?: boolean
   aiReason?: string
@@ -46,7 +50,21 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export function ClinicCard({ clinic, onSelect, isBestMatch, aiReason }: Props) {
+export function ClinicCard({ clinic, userLocation, onSelect, isBestMatch, aiReason }: Props) {
+  const clinicLat = clinic.location?.coordinates?.[1]
+  const clinicLng = clinic.location?.coordinates?.[0]
+  const hasCoordinates = Number.isFinite(clinicLat) && Number.isFinite(clinicLng)
+
+  const handleGetDirections = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    if (!hasCoordinates) return
+    const directionsUrl = buildGoogleMapsDirectionsUrl(
+      { lat: clinicLat as number, lng: clinicLng as number },
+      userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined
+    )
+    window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+  }
+
   return (
     <Card
       className={cn(
@@ -131,6 +149,20 @@ export function ClinicCard({ clinic, onSelect, isBestMatch, aiReason }: Props) {
           <p className="text-xs text-brand-700 leading-relaxed">✦ {aiReason}</p>
         </div>
       )}
+
+      <div className="mt-4 pt-3 border-t border-surface-100 flex justify-end">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={!hasCoordinates}
+          onClick={handleGetDirections}
+          className="h-8 rounded-lg border-surface-200 text-xs text-surface-700"
+        >
+          <Navigation size={13} />
+          Get Directions
+        </Button>
+      </div>
     </Card>
   )
 }
