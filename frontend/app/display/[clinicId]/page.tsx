@@ -42,7 +42,9 @@ export default function DisplayPage() {
   useEffect(() => {
     // Fetch clinic info
     clinicsApi.getById(clinicId).then(({ data }) => setClinic(data)).catch(() => {})
-    fetchQueue()
+    queueMicrotask(() => {
+      void fetchQueue()
+    })
 
     // SSE
     const disconnect = connectSSE(clinicId, (event) => {

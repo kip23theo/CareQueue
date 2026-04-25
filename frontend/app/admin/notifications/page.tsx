@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getUser } from '@/lib/auth'
 import { notificationsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
-import { cn, formatTime, formatTimeAgo } from '@/lib/utils'
+import { cn, formatTimeAgo } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -39,7 +39,7 @@ export default function AdminNotificationsPage() {
   const [filter, setFilter] = useState<'all' | NotificationChannel>('all')
   const [resending, setResending] = useState<string | null>(null)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user?.clinic_id) return
     setIsLoading(true)
     try {
@@ -48,9 +48,13 @@ export default function AdminNotificationsPage() {
     } catch { /* ignore */ } finally {
       setIsLoading(false)
     }
-  }
+  }, [user?.clinic_id])
 
-  useEffect(() => { load() }, [user?.clinic_id])
+  useEffect(() => {
+    queueMicrotask(() => {
+      void load()
+    })
+  }, [load])
 
   const handleResend = async (n: Notification) => {
     setResending(n._id)

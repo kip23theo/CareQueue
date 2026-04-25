@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn, formatTokenDisplay } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 import type { QueueToken } from '@/types'
 import { Search, User, Phone } from 'lucide-react'
 
@@ -31,12 +33,12 @@ export default function SearchPatientPage() {
 
       <div className="relative mb-6">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-surface-400" />
-        <input
+        <Input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by name or phone number..."
-          className="w-full pl-11 pr-4 py-3 rounded-2xl border border-surface-200 bg-white text-sm focus:outline-none focus:border-brand-400 shadow-sm"
+          className="h-12 rounded-2xl border-surface-200 bg-white pl-11 pr-4 text-sm shadow-sm"
           autoFocus
         />
       </div>
@@ -58,7 +60,7 @@ export default function SearchPatientPage() {
 
       <div className="space-y-2">
         {results.map((token) => (
-          <div
+          <Card
             key={token._id}
             onClick={() => setSelected(selected?._id === token._id ? null : token)}
             className={cn(
@@ -112,7 +114,7 @@ export default function SearchPatientPage() {
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         ))}
       </div>
     </div>

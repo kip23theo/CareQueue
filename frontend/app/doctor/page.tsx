@@ -5,7 +5,7 @@ import { getUser } from '@/lib/auth'
 import { doctorsApi, adminQueueApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn, formatTokenDisplay } from '@/lib/utils'
-import type { DoctorQueue, QueueToken } from '@/types'
+import type { DoctorQueue } from '@/types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,7 @@ import { connectSSE } from '@/lib/sse'
 import axios from 'axios'
 import {
   CheckCircle2, SkipForward, Siren, Stethoscope,
-  PhoneCall, Clock, Users, TrendingUp, Loader2,
+  PhoneCall, Clock, Users, Loader2,
   ToggleLeft, ToggleRight, AlertCircle
 } from 'lucide-react'
 
@@ -59,10 +59,12 @@ export default function DoctorPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [user?.id])
+  }, [user])
 
   useEffect(() => {
-    fetchQueue()
+    queueMicrotask(() => {
+      void fetchQueue()
+    })
     if (!user?.clinic_id) return
     const disconnect = connectSSE(
       user.clinic_id,
@@ -192,7 +194,7 @@ export default function DoctorPage() {
             </div>
             {current.symptoms && (
               <div className="px-4 py-3 rounded-xl bg-surface-50 text-sm text-surface-700 mb-4 italic">
-                "{current.symptoms}"
+                &ldquo;{current.symptoms}&rdquo;
               </div>
             )}
             <div className="flex gap-2 flex-wrap">

@@ -4,8 +4,7 @@ import { useState } from 'react'
 import { getUser } from '@/lib/auth'
 import { doctorsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
-import { ToggleLeft, ToggleRight, Clock, Save } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Clock, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -52,7 +51,7 @@ export default function DoctorSettingsPage() {
       {/* Availability */}
       <Card className="bg-white rounded-2xl border border-surface-200 p-6 mb-4 shadow-sm">
         <h2 className="font-semibold text-surface-900 font-heading mb-1">Availability</h2>
-        <p className="text-sm text-surface-500 mb-4">Control whether you're accepting patients right now</p>
+        <p className="text-sm text-surface-500 mb-4">Control whether you&apos;re accepting patients right now</p>
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-medium text-surface-700">I am available to see patients</span>
           <div className="flex items-center gap-2">
@@ -76,7 +75,7 @@ export default function DoctorSettingsPage() {
         <p className="text-sm text-surface-500 mb-4">Add extra buffer to patient wait time estimates</p>
         <div className="flex items-center gap-3 mb-4">
           <Clock size={18} className="text-brand-500 shrink-0" />
-          <span className="text-sm text-surface-700">I'm running late by</span>
+          <span className="text-sm text-surface-700">I&apos;m running late by</span>
           <Input
             type="number"
             min="0"
@@ -99,7 +98,7 @@ export default function DoctorSettingsPage() {
 
       {/* Today's stats */}
       <Card className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
-        <h2 className="font-semibold text-surface-900 font-heading mb-4">Today's Summary</h2>
+        <h2 className="font-semibold text-surface-900 font-heading mb-4">Today&apos;s Summary</h2>
         <div className="grid grid-cols-2 gap-4">
           {[
             { label: 'Patients seen', value: '—' },

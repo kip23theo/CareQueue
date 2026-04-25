@@ -4,14 +4,13 @@ import { useState, useEffect } from 'react'
 import { getUser } from '@/lib/auth'
 import { clinicAdminApi } from '@/lib/api-calls'
 import type { ClinicAnalytics } from '@/types'
-import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend
+  CartesianGrid, PieChart, Pie, Cell
 } from 'recharts'
-import { BarChart3, Calendar, TrendingUp, Loader2 } from 'lucide-react'
+import { BarChart3, Calendar, TrendingUp } from 'lucide-react'
 
 const COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#94a3b8']
 
@@ -23,7 +22,6 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (!user?.clinic_id) return
-    setIsLoading(true)
     clinicAdminApi.getAnalytics(user.clinic_id, selectedDate)
       .then(({ data }) => setAnalytics(data))
       .catch(() => {})
@@ -66,7 +64,10 @@ export default function AdminAnalyticsPage() {
           <Input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => {
+              setIsLoading(true)
+              setSelectedDate(e.target.value)
+            }}
             max={new Date().toISOString().split('T')[0]}
             className="h-10 w-40 rounded-xl border-surface-200 text-sm bg-white"
           />

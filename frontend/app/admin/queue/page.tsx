@@ -96,12 +96,13 @@ export default function AdminQueuePage() {
             ? allTokens.length
             : allTokens.filter((t) => t.status === tab.status).length
           return (
-            <button
-              type="button"
+            <Button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
+              size="sm"
+              variant={activeTab === tab.status ? 'default' : 'outline'}
               className={cn(
-                'inline-flex items-center gap-1.5 h-8 px-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
+                'items-center gap-1.5 h-8 px-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
                 activeTab === tab.status
                   ? 'bg-brand-500 text-white shadow-sm'
                   : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300'
@@ -114,7 +115,7 @@ export default function AdminQueuePage() {
               )}>
                 {count}
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { clinicAdminApi } from '@/lib/api-calls'
 import { getUser } from '@/lib/auth'
-import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import type { ClinicAnalytics } from '@/types'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import {
   Users, Clock, CheckCircle2, UserX,
   ArrowRight, ToggleLeft, ToggleRight, TrendingUp
@@ -34,8 +33,7 @@ function StatCard({ label, value, sub, icon, color }: {
 
 export default function AdminDashboard() {
   const user = getUser()
-  const { queue, isLoading } = useQueue()
-  const { success, error: toastError } = useToast()
+  const { queue } = useQueue()
   const [analytics, setAnalytics] = useState<ClinicAnalytics | null>(null)
   const [isOpen, setIsOpen] = useState(true)
 
@@ -84,7 +82,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold font-heading text-surface-900">Dashboard</h1>
-          <p className="text-surface-500 text-sm mt-0.5">Today's clinic overview</p>
+          <p className="text-surface-500 text-sm mt-0.5">Today&apos;s clinic overview</p>
         </div>
         <Button
           onClick={() => setIsOpen(!isOpen)}
@@ -129,10 +127,10 @@ export default function AdminDashboard() {
       {/* Quick action cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
-          { href: '/admin/queue', label: 'Manage Live Queue', desc: `${queue?.waiting.length ?? 0} patients waiting`, color: 'bg-brand-500' },
-          { href: '/admin/doctors', label: 'View Doctors', desc: 'Manage availability & delays', color: 'bg-blue-500' },
-          { href: '/admin/analytics', label: 'Analytics', desc: 'Performance metrics & trends', color: 'bg-purple-500' },
-          { href: '/admin/settings', label: 'Clinic Settings', desc: 'Profile & opening hours', color: 'bg-surface-700' },
+          { href: '/admin/queue', label: 'Manage Live Queue', desc: `${queue?.waiting.length ?? 0} patients waiting` },
+          { href: '/admin/doctors', label: 'View Doctors', desc: 'Manage availability & delays' },
+          { href: '/admin/analytics', label: 'Analytics', desc: 'Performance metrics & trends' },
+          { href: '/admin/settings', label: 'Clinic Settings', desc: 'Profile & opening hours' },
         ].map((item) => (
           <Button
             key={item.href}
