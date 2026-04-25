@@ -17,6 +17,8 @@ import { Check, Circle, Loader2 } from 'lucide-react'
 interface Props {
   token: QueueToken
   clinicName: string
+  doctorName?: string
+  doctorSpecialization?: string
 }
 
 interface TimelineStep {
@@ -57,12 +59,18 @@ function buildTimeline(token: QueueToken): TimelineStep[] {
   ]
 }
 
-export function LiveTracker({ token: initialToken, clinicName }: Props) {
+export function LiveTracker({ token: initialToken, clinicName, doctorName, doctorSpecialization }: Props) {
   const router = useRouter()
   const { setMyToken } = usePatient()
   const [token, setToken] = useState(initialToken)
   const [eta, setEta] = useState(initialToken.est_wait_mins)
   const [isCalled, setIsCalled] = useState(initialToken.status === 'CALLED')
+  const normalizedDoctorName = doctorName?.trim()
+  const doctorLabel = normalizedDoctorName
+    ? /^dr\.?\s/i.test(normalizedDoctorName)
+      ? normalizedDoctorName
+      : `Dr. ${normalizedDoctorName}`
+    : null
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -127,6 +135,12 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
       <div className="bg-white border-b border-surface-200 px-4 py-3 flex items-center justify-between">
         <div>
           <p className="text-xs text-surface-500 font-medium">{clinicName}</p>
+          {doctorLabel && (
+            <p className="text-xs text-surface-500 mt-0.5">
+              {doctorLabel}
+              {doctorSpecialization ? ` • ${doctorSpecialization}` : ''}
+            </p>
+          )}
           <h1 className="text-base font-bold text-surface-900 font-heading">Your Queue Status</h1>
         </div>
         <LiveDot label="Live" size="sm" />

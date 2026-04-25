@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { tokensApi, clinicsApi } from '@/lib/api-calls'
 import { usePatient } from '@/context/PatientContext'
 import { LiveTracker } from '@/components/queue/LiveTracker'
-import type { QueueToken, Clinic } from '@/types'
+import type { QueueToken, Clinic, Doctor } from '@/types'
 import { Loader2 } from 'lucide-react'
 import axios from 'axios'
 
@@ -14,6 +14,7 @@ export default function TokenTrackerPage() {
   const { myToken, setMyToken } = usePatient()
   const [token, setToken] = useState<QueueToken | null>(null)
   const [clinic, setClinic] = useState<Clinic | null>(null)
+  const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -21,8 +22,12 @@ export default function TokenTrackerPage() {
       try {
         const { data: t } = await tokensApi.getStatus(tokenId)
         setToken(t)
-        const { data: c } = await clinicsApi.getById(t.clinic_id)
+        const [{ data: c }, { data: doctors }] = await Promise.all([
+          clinicsApi.getById(t.clinic_id),
+          clinicsApi.getDoctors(t.clinic_id),
+        ])
         setClinic(c)
+        setDoctor(doctors.find((item) => item._id === t.doctor_id) ?? null)
       } catch (error) {
         if (
           axios.isAxiosError(error) &&
@@ -54,5 +59,12 @@ export default function TokenTrackerPage() {
     )
   }
 
-  return <LiveTracker token={token} clinicName={clinic?.name ?? 'Clinic'} />
+  return (
+    <LiveTracker
+      token={token}
+      clinicName={clinic?.name ?? 'Clinic'}
+      doctorName={doctor?.name}
+      doctorSpecialization={doctor?.specialization}
+    />
+  )
 }
