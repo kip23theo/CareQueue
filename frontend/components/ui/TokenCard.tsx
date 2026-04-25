@@ -3,6 +3,8 @@
 import { cn, formatTokenDisplay, formatWaitTime, formatTimeAgo } from '@/lib/utils'
 import type { QueueToken } from '@/types'
 import { StatusBadge } from './StatusBadge'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import {
   User, Clock, CheckCircle2, SkipForward,
   Siren, Stethoscope
@@ -23,7 +25,7 @@ export function TokenCard({ token, variant = 'patient', onSkip, onEmergency, onC
 
   if (variant === 'compact') {
     return (
-      <div className={cn(
+      <Card className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl border bg-white',
         'hover:border-brand-300 transition-colors',
         token.status === 'EMERGENCY' && 'border-red-300 bg-red-50'
@@ -38,13 +40,13 @@ export function TokenCard({ token, variant = 'patient', onSkip, onEmergency, onC
           )}
         </div>
         <StatusBadge status={token.status} size="sm" />
-      </div>
+      </Card>
     )
   }
 
   if (variant === 'patient') {
     return (
-      <div className={cn(
+      <Card className={cn(
         'rounded-2xl border-2 bg-white p-6 transition-all duration-300 animate-fade-in',
         token.status === 'CALLED'
           ? 'border-amber-400 shadow-amber-100 shadow-lg'
@@ -74,13 +76,13 @@ export function TokenCard({ token, variant = 'patient', onSkip, onEmergency, onC
         <div className="mt-3 text-xs text-surface-400">
           Joined {formatTimeAgo(token.joined_at)}
         </div>
-      </div>
+      </Card>
     )
   }
 
   // Staff variant
   return (
-    <div className={cn(
+    <Card className={cn(
       'rounded-2xl border-2 bg-white p-5 transition-all duration-300 animate-slide-up',
       token.status === 'EMERGENCY'
         ? 'border-red-400 bg-red-50'
@@ -106,47 +108,53 @@ export function TokenCard({ token, variant = 'patient', onSkip, onEmergency, onC
       {(onSkip || onEmergency || onComplete || onStart) && (
         <div className="flex gap-2 flex-wrap">
           {onStart && token.status === 'CALLED' && (
-            <button
+            <Button
               onClick={() => onStart(token._id)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition-colors disabled:opacity-50"
+              size="sm"
+              className="h-8 px-3 gap-1.5 bg-brand-500 hover:bg-brand-600 text-white"
             >
               <Stethoscope size={14} />
               Start
-            </button>
+            </Button>
           )}
           {onComplete && (
-            <button
+            <Button
               onClick={() => onComplete(token._id)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
+              size="sm"
+              className="h-8 px-3 gap-1.5 bg-green-500 hover:bg-green-600 text-white"
             >
               <CheckCircle2 size={14} />
               Complete
-            </button>
+            </Button>
           )}
           {onSkip && (
-            <button
+            <Button
               onClick={() => onSkip(token._id)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 text-sm font-medium hover:bg-amber-200 transition-colors disabled:opacity-50"
+              size="sm"
+              variant="secondary"
+              className="h-8 px-3 gap-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200"
             >
               <SkipForward size={14} />
               Skip
-            </button>
+            </Button>
           )}
           {onEmergency && (
-            <button
+            <Button
               onClick={() => onEmergency(token._id)}
               disabled={isLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-sm font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
+              size="sm"
+              variant="secondary"
+              className="h-8 px-3 gap-1.5 bg-red-100 text-red-700 hover:bg-red-200"
             >
               <Siren size={14} />
               Emergency
-            </button>
+            </Button>
           )}
         </div>
       )}
-    </div>
+    </Card>
   )
 }
