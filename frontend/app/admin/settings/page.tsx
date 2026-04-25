@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { Clinic } from '@/types'
 import axios from 'axios'
-import { Save, Loader2, Clock } from 'lucide-react'
+import { Save, Loader2, Clock, ExternalLink } from 'lucide-react'
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const
 type Day = typeof DAYS[number]
@@ -25,8 +25,7 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({
     name: '', address: '', phone: '',
-    latitude: '',
-    longitude: '',
+    google_maps_link: '',
     avg_consult_time: 15,
     is_open: true,
     specializations: [] as string[],
@@ -39,13 +38,18 @@ export default function AdminSettingsPage() {
     if (!user?.clinic_id) return
     clinicsApi.getById(user.clinic_id).then(({ data }) => {
       const coords = data.location?.coordinates ?? [0, 0]
+      const lat = Number(coords[1] ?? 0)
+      const lng = Number(coords[0] ?? 0)
+      const fallbackLink =
+        Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0)
+          ? `https://www.google.com/maps?q=${lat},${lng}`
+          : ''
       setForm((prev) => ({
         ...prev,
         name: data.name,
         address: data.address,
         phone: data.phone,
-        latitude: String(coords[1] ?? ''),
-        longitude: String(coords[0] ?? ''),
+        google_maps_link: data.google_maps_link ?? fallbackLink,
         avg_consult_time: data.avg_consult_time,
         is_open: data.is_open,
         specializations: data.specializations,
@@ -57,14 +61,18 @@ export default function AdminSettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user?.clinic_id) return
+    const mapsLink = form.google_maps_link.trim()
+    if (!mapsLink) {
+      toastError('Google Maps link is required')
+      return
+    }
     setIsSaving(true)
     try {
       await clinicAdminApi.update(user.clinic_id, {
         name: form.name,
         address: form.address,
         phone: form.phone,
-        latitude: Number(form.latitude),
-        longitude: Number(form.longitude),
+        google_maps_link: mapsLink,
         avg_consult_time: form.avg_consult_time,
         is_open: form.is_open,
         specializations: form.specializations,
@@ -121,19 +129,30 @@ export default function AdminSettingsPage() {
                 className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Latitude</Label>
-              <Input value={form.latitude} onChange={e => setForm(f => ({...f, latitude: e.target.value}))}
+          <div>
+            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Google Maps Link</Label>
+            <div className="flex gap-2">
+              <Input
+                value={form.google_maps_link}
+                onChange={e => setForm(f => ({ ...f, google_maps_link: e.target.value }))}
                 className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
-                placeholder="28.6139" />
+                placeholder="https://www.google.com/maps/place/..."
+              />
+              {form.google_maps_link.trim() && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 rounded-xl border-surface-200 text-surface-700 px-3"
+                  onClick={() => window.open(form.google_maps_link.trim(), '_blank', 'noopener,noreferrer')}
+                >
+                  <ExternalLink size={14} />
+                  Open
+                </Button>
+              )}
             </div>
-            <div>
-              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Longitude</Label>
-              <Input value={form.longitude} onChange={e => setForm(f => ({...f, longitude: e.target.value}))}
-                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
-                placeholder="77.2090" />
-            </div>
+            <p className="text-[11px] text-surface-500 mt-1.5">
+              Paste the clinic&apos;s Google Maps URL. Coordinates are auto-extracted from this link.
+            </p>
           </div>
           <div className="flex items-center justify-between">
             <div>

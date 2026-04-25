@@ -84,6 +84,7 @@ export interface Clinic {
   name: string
   address: string
   location: GeoLocation
+  google_maps_link?: string | null
   phone: string
   specializations: string[]
   opening_hours: OpeningHours

@@ -82,11 +82,16 @@ export default function ClinicsPage() {
   const [aiRecommendations, setAIRecommendations] = useState<AIRecommendation[]>([])
   const [isAILoading, setIsAILoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const trimmedLocationQuery = locationQuery.trim()
   const activeLocationLabel = location?.label?.trim()
     ? location.label
     : location
       ? `${location.lat.toFixed(3)}, ${location.lng.toFixed(3)}`
       : ''
+  const shouldShowLocationDropdown =
+    trimmedLocationQuery.length >= 2 &&
+    trimmedLocationQuery !== activeLocationLabel.trim() &&
+    (isLocationSearchLoading || locationSuggestions.length > 0)
 
   useEffect(() => {
     if (!location) {
@@ -111,15 +116,14 @@ export default function ClinicsPage() {
   }, [location, router, setNearbyClinics])
 
   useEffect(() => {
-    const query = locationQuery.trim()
-    if (query.length < 2 || query === activeLocationLabel.trim()) {
+    if (trimmedLocationQuery.length < 2 || trimmedLocationQuery === activeLocationLabel.trim()) {
       return
     }
 
     const timer = window.setTimeout(async () => {
       setIsLocationSearchLoading(true)
       try {
-        const suggestions = await searchLocationSuggestions(query)
+        const suggestions = await searchLocationSuggestions(trimmedLocationQuery)
         setLocationSuggestions(suggestions)
       } catch {
         setLocationSuggestions([])
@@ -129,7 +133,7 @@ export default function ClinicsPage() {
     }, 300)
 
     return () => window.clearTimeout(timer)
-  }, [locationQuery, activeLocationLabel])
+  }, [trimmedLocationQuery, activeLocationLabel])
 
   const handleSelectLocation = (suggestion: LocationSuggestion) => {
     setLocation({
@@ -240,7 +244,7 @@ export default function ClinicsPage() {
                 placeholder="Search location..."
                 className="h-10 rounded-xl border-surface-200 bg-white px-3 text-sm"
               />
-              {(isLocationSearchLoading || locationSuggestions.length > 0) && (
+              {shouldShowLocationDropdown && (
                 <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-surface-200 bg-white shadow-lg p-1 max-h-56 overflow-y-auto">
                   {isLocationSearchLoading ? (
                     <div className="px-2 py-2 text-xs text-surface-500 flex items-center gap-2">

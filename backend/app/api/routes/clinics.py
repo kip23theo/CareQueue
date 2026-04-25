@@ -182,6 +182,7 @@ async def get_clinic_detail(
         id=str(clinic.id),
         name=clinic.name,
         location=clinic.location,
+        google_maps_link=clinic.google_maps_link,
         address=clinic.address,
         phone=clinic.phone,
         specializations=clinic.specializations,

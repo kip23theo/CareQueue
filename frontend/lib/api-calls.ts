@@ -51,6 +51,7 @@ function toClinic(raw: unknown): Clinic {
     name: c.name ?? 'Clinic',
     address: c.address ?? '',
     location: c.location ?? { type: 'Point', coordinates: [0, 0] },
+    google_maps_link: c.google_maps_link ?? null,
     phone: c.phone ?? '',
     specializations: c.specializations ?? [],
     opening_hours: c.opening_hours ?? DEFAULT_OPENING_HOURS,
@@ -483,7 +484,7 @@ export const doctorsApi = {
 
 // ── Clinic admin ────────────────────────────────────────
 export const clinicAdminApi = {
-  update: (clinicId: string, body: Partial<Clinic> & { latitude?: number; longitude?: number }) =>
+  update: (clinicId: string, body: Partial<Clinic> & { latitude?: number; longitude?: number; google_maps_link?: string }) =>
     api.patch<Clinic>(`/admin/clinics/${clinicId}`, body),
   getAnalytics: (clinicId: string, date?: string) =>
     api.get<ClinicAnalytics>(`/admin/clinics/${clinicId}/analytics`, { params: { date } }),

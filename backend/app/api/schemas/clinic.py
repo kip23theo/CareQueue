@@ -34,6 +34,10 @@ class ClinicDetailResponse(BaseModel):
     location: dict[str, Any] = Field(
         examples=[{"type": "Point", "coordinates": [77.209, 28.6139]}]
     )
+    google_maps_link: str | None = Field(
+        default=None,
+        examples=["https://www.google.com/maps?q=28.6139,77.2090"],
+    )
     address: str = Field(examples=["Connaught Place, New Delhi"])
     phone: str = Field(examples=["+911100000001"])
     specializations: list[str] = Field(examples=[["general", "fever", "family medicine"]])

@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
+import re
 from typing import Any
+from urllib.parse import parse_qs, unquote, urlparse
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
@@ -59,6 +61,7 @@ def _serialize_clinic(clinic: Clinic) -> dict[str, Any]:
         "address": clinic.address,
         "phone": clinic.phone,
         "location": clinic.location,
+        "google_maps_link": clinic.google_maps_link,
         "specializations": clinic.specializations,
         "opening_hours": clinic.opening_hours,
         "avg_consult_time": clinic.avg_consult_time,
@@ -105,6 +108,7 @@ class UpdateClinicRequest(BaseModel):
     name: str | None = None
     address: str | None = None
     phone: str | None = None
+    google_maps_link: str | None = None
     specializations: list[str] | None = None
     opening_hours: dict[str, Any] | None = None
     avg_consult_time: int | None = Field(default=None, ge=1, le=180)
@@ -112,6 +116,68 @@ class UpdateClinicRequest(BaseModel):
     delay_buffer: int | None = Field(default=None, ge=0, le=240)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
+
+
+_COORDINATE_PATTERN = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
+
+
+def _is_valid_coordinate_pair(lat: float, lng: float) -> bool:
+    return -90 <= lat <= 90 and -180 <= lng <= 180
+
+
+def _find_first_coordinate_pair(value: str) -> tuple[float, float] | None:
+    for match in _COORDINATE_PATTERN.finditer(value):
+        lat = float(match.group(1))
+        lng = float(match.group(2))
+        if _is_valid_coordinate_pair(lat, lng):
+            return lat, lng
+    return None
+
+
+def _extract_coordinates_from_google_maps_link(link: str) -> tuple[float, float]:
+    candidate = link.strip()
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google Maps link cannot be empty",
+        )
+
+    if not candidate.startswith(("http://", "https://")):
+        candidate = f"https://{candidate}"
+
+    parsed = urlparse(candidate)
+    if not parsed.netloc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Google Maps link",
+        )
+
+    query = parse_qs(parsed.query)
+    query_keys = ("q", "query", "destination", "origin")
+    for key in query_keys:
+        for value in query.get(key, []):
+            decoded = unquote(value)
+            coords = _find_first_coordinate_pair(decoded)
+            if coords is not None:
+                return coords
+
+    decoded_path = unquote(parsed.path)
+    at_match = re.search(r"@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)", decoded_path)
+    if at_match is not None:
+        lat = float(at_match.group(1))
+        lng = float(at_match.group(2))
+        if _is_valid_coordinate_pair(lat, lng):
+            return lat, lng
+
+    decoded_full = unquote(candidate)
+    coords = _find_first_coordinate_pair(decoded_full)
+    if coords is not None:
+        return coords
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Could not extract coordinates from Google Maps link",
+    )
 
 
 @router.get(
@@ -391,6 +457,17 @@ async def update_clinic(
         clinic.address = payload.address.strip()
     if payload.phone is not None:
         clinic.phone = payload.phone.strip()
+    if payload.google_maps_link is not None:
+        maps_link = payload.google_maps_link.strip()
+        if maps_link:
+            lat, lng = _extract_coordinates_from_google_maps_link(maps_link)
+            clinic.google_maps_link = maps_link
+            clinic.location = {
+                "type": "Point",
+                "coordinates": [lng, lat],
+            }
+        else:
+            clinic.google_maps_link = None
     if payload.specializations is not None:
         clinic.specializations = [value.strip() for value in payload.specializations if value.strip()]
     if payload.opening_hours is not None:
@@ -402,7 +479,7 @@ async def update_clinic(
     if payload.delay_buffer is not None:
         clinic.delay_buffer = payload.delay_buffer
 
-    if payload.latitude is not None or payload.longitude is not None:
+    if payload.google_maps_link is None and (payload.latitude is not None or payload.longitude is not None):
         if payload.latitude is None or payload.longitude is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
