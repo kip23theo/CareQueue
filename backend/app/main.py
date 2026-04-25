@@ -10,3 +10,8 @@ app = FastAPI(
 @app.get("/")
 def read_root() -> dict[str, str]:
     return {"status": "ok", "service": "CareQueue API"}
+
+
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    return {"status": "ok", "service": "clinicflow-backend"}
