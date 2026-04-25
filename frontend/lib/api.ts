@@ -1,7 +1,7 @@
 import axios from 'axios'
+import { getApiBaseUrl } from './base-url'
 
-// ← PASTE YOUR FASTAPI BASE URL HERE
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const BASE_URL = getApiBaseUrl()
 
 export const api = axios.create({
   baseURL: BASE_URL,

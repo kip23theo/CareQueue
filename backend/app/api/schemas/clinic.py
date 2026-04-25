@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -45,3 +46,36 @@ class QueueTokenLiveResponse(BaseModel):
     status: QueueStatus = Field(examples=[QueueStatus.WAITING])
     est_wait_mins: int = Field(examples=[24])
     position: int = Field(examples=[3])
+
+
+class QueueTokenSnapshot(BaseModel):
+    id: str = Field(examples=["69ec6f6ac3c51735cea88be0"])
+    clinic_id: str = Field(examples=["69ec6f6ac3c51735cea88bcb"])
+    doctor_id: str = Field(examples=["69ec6f6ac3c51735cea88bd3"])
+    token_number: int = Field(examples=[101])
+    token_display: str = Field(examples=["A101"])
+    patient_name: str = Field(examples=["Demo Patient"])
+    patient_phone: str = Field(examples=["+919999999999"])
+    patient_age: int | None = Field(default=None, examples=[25])
+    symptoms: str | None = Field(default=None, examples=["Fever and headache"])
+    status: QueueStatus = Field(examples=[QueueStatus.WAITING])
+    position: int = Field(examples=[3])
+    est_wait_mins: int = Field(examples=[24])
+    joined_at: datetime
+    called_at: datetime | None = None
+    consult_start: datetime | None = None
+    consult_end: datetime | None = None
+    date: str = Field(examples=["2026-04-25"])
+    is_walkin: bool = Field(default=False, examples=[True])
+
+
+class LiveQueueSnapshotResponse(BaseModel):
+    clinic_id: str = Field(examples=["69ec6f6ac3c51735cea88bcb"])
+    date: str = Field(examples=["2026-04-25"])
+    tokens: list[QueueTokenSnapshot]
+    current_token: QueueTokenSnapshot | None = None
+    waiting: list[QueueTokenSnapshot]
+    called: list[QueueTokenSnapshot]
+    completed_count: int = Field(examples=[4])
+    skipped_count: int = Field(examples=[1])
+    no_show_count: int = Field(examples=[0])

@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from './base-url'
+
 // SSE helper — connects to live queue stream
 export function connectSSE(
   clinicId: string,
@@ -5,7 +7,7 @@ export function connectSSE(
   onConnect?: () => void,
   onDisconnect?: () => void
 ): () => void {
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  const BASE_URL = getApiBaseUrl()
   const es = new EventSource(`${BASE_URL}/clinics/${clinicId}/sse`)
 
   es.onopen = () => {

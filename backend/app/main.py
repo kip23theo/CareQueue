@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.ai import router as ai_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.clinics import router as clinics_router
+from app.api.routes.doctors import router as doctors_router
 from app.core.config import get_settings
 from app.api.routes.tokens import router as tokens_router
 from app.db.mongodb import close_mongo_connection, connect_to_mongo
@@ -39,6 +40,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(clinics_router, prefix="/clinics", tags=["clinics"])
+app.include_router(doctors_router)
 app.include_router(ai_router)
 app.include_router(tokens_router, prefix="/tokens", tags=["tokens"])
 
