@@ -50,3 +50,4 @@ python scripts/init_db.py
 - API: ./docs/api.md
 - Schema: ./docs/schema.md
 - Architecture: ./docs/architecture.md
+- Runbook: ./docs/runbook.md
