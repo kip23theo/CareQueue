@@ -36,6 +36,15 @@ FastAPI backend starter for CareQueue.
    http://127.0.0.1:8000/docs
    ```
 
+## MongoDB ODM Setup
+
+Initialize Beanie models and MongoDB indexes:
+
+```bash
+cd backend
+python scripts/init_db.py
+```
+
 ## Documentation
 
 - API: ./docs/api.md
