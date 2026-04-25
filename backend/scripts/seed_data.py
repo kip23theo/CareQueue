@@ -123,9 +123,10 @@ async def seed_data() -> None:
 
         clinic = Clinic(
             name="Demo City Clinic",
-            location={"type": "Point", "coordinates": [77.2090, 28.6139]},
+            location={"type": "Point", "coordinates": [76.365517, 10.007223]},
             clinic_image="https://images.unsplash.com/photo-1586773860418-d37222d8fce3",
             address="Connaught Place, New Delhi",
+            google_maps_link="https://www.google.com/maps?q=10.007223,76.365517",
             phone="+911100000001",
             specializations=["general", "family medicine", "pediatrics", "dermatology"],
             opening_hours={"mon_sat": "09:00-18:00"},

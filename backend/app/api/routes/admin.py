@@ -150,6 +150,7 @@ class UpdateClinicRequest(BaseModel):
 
 
 _COORDINATE_PATTERN = re.compile(r"(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)")
+_BANG_COORDINATE_PATTERN = re.compile(r"!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)")
 
 
 def _is_valid_coordinate_pair(lat: float, lng: float) -> bool:
@@ -162,6 +163,17 @@ def _find_first_coordinate_pair(value: str) -> tuple[float, float] | None:
         lng = float(match.group(2))
         if _is_valid_coordinate_pair(lat, lng):
             return lat, lng
+    return None
+
+
+def _find_bang_coordinate_pair(value: str) -> tuple[float, float] | None:
+    match = _BANG_COORDINATE_PATTERN.search(value)
+    if match is None:
+        return None
+    lat = float(match.group(1))
+    lng = float(match.group(2))
+    if _is_valid_coordinate_pair(lat, lng):
+        return lat, lng
     return None
 
 
@@ -184,7 +196,7 @@ def _extract_coordinates_from_google_maps_link(link: str) -> tuple[float, float]
         )
 
     query = parse_qs(parsed.query)
-    query_keys = ("q", "query", "destination", "origin")
+    query_keys = ("q", "query", "destination", "origin", "ll", "center")
     for key in query_keys:
         for value in query.get(key, []):
             decoded = unquote(value)
@@ -201,6 +213,10 @@ def _extract_coordinates_from_google_maps_link(link: str) -> tuple[float, float]
             return lat, lng
 
     decoded_full = unquote(candidate)
+    bang_coords = _find_bang_coordinate_pair(decoded_full)
+    if bang_coords is not None:
+        return bang_coords
+
     coords = _find_first_coordinate_pair(decoded_full)
     if coords is not None:
         return coords
@@ -550,12 +566,17 @@ async def update_clinic(
     if payload.google_maps_link is not None:
         maps_link = payload.google_maps_link.strip()
         if maps_link:
-            lat, lng = _extract_coordinates_from_google_maps_link(maps_link)
             clinic.google_maps_link = maps_link
-            clinic.location = {
-                "type": "Point",
-                "coordinates": [lng, lat],
-            }
+            try:
+                lat, lng = _extract_coordinates_from_google_maps_link(maps_link)
+            except HTTPException:
+                # Keep existing coordinates when link format does not contain parsable coordinates.
+                pass
+            else:
+                clinic.location = {
+                    "type": "Point",
+                    "coordinates": [lng, lat],
+                }
         else:
             clinic.google_maps_link = None
     if payload.specializations is not None:

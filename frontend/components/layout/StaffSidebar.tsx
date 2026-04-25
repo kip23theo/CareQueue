@@ -1,7 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { getUser, logout } from '@/lib/auth'
+import { getUser, logout, subscribeAuth, type AuthUser } from '@/lib/auth'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
@@ -73,8 +74,19 @@ interface Props {
 
 export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
   const pathname = usePathname()
-  const user = getUser()
-  if (!user) return null
+  const [user, setUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    const syncUser = () => {
+      setUser(getUser())
+    }
+    syncUser()
+    return subscribeAuth(syncUser)
+  }, [])
+
+  if (!user) {
+    return <aside aria-hidden="true" className="w-64 min-h-screen shrink-0 bg-surface-900" />
+  }
 
   const navItems = navMap[user.role] ?? []
 

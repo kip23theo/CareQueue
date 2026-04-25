@@ -19,6 +19,41 @@ function emitAuthChange(): void {
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT))
 }
 
+function normalizeStoredUser(value: unknown): AuthUser | null {
+  if (!value || typeof value !== 'object') return null
+
+  const root = value as Record<string, unknown>
+  const source = root.user && typeof root.user === 'object'
+    ? (root.user as Record<string, unknown>)
+    : root
+
+  const id = typeof source.id === 'string' ? source.id : ''
+  const name = typeof source.name === 'string' ? source.name : ''
+  const email = typeof source.email === 'string' ? source.email : ''
+  const role = source.role
+  const clinicRaw = source.clinic_id ?? source.clinicId ?? null
+  const clinicId = typeof clinicRaw === 'string' ? clinicRaw : null
+  const phone = typeof source.phone === 'string' ? source.phone : null
+
+  const validRole =
+    role === 'super_admin' ||
+    role === 'admin' ||
+    role === 'doctor' ||
+    role === 'receptionist' ||
+    role === 'patient'
+
+  if (!id || !name || !email || !validRole) return null
+
+  return {
+    id,
+    name,
+    email,
+    role,
+    clinic_id: clinicId,
+    phone,
+  }
+}
+
 export function getUser(): AuthUser | null {
   if (typeof window === 'undefined') return null
   const raw = localStorage.getItem(AUTH_USER_KEY)
@@ -31,7 +66,19 @@ export function getUser(): AuthUser | null {
   }
 
   try {
-    cachedUser = JSON.parse(raw) as AuthUser
+    const parsed = JSON.parse(raw) as unknown
+    const normalized = normalizeStoredUser(parsed)
+    if (!normalized) {
+      cachedUser = null
+      return null
+    }
+
+    const serialized = JSON.stringify(normalized)
+    if (serialized !== raw) {
+      localStorage.setItem(AUTH_USER_KEY, serialized)
+      cachedUserRaw = serialized
+    }
+    cachedUser = normalized
   } catch {
     cachedUser = null
   }
