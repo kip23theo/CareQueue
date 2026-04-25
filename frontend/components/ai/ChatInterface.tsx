@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils'
 import type { AIChatMessage, Clinic } from '@/types'
 import { aiApi } from '@/lib/api-calls'
 import { ClinicCard } from '@/components/ui/ClinicCard'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 import { Send, Bot, User, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -61,17 +64,18 @@ export function ChatInterface({ initialContext = [] }: Props) {
             <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Sparkles size={22} className="text-white" />
             </div>
-            <h2 className="text-lg font-bold font-heading text-surface-900 mb-1">ClinicFlow AI</h2>
+            <h2 className="text-lg font-bold font-heading text-surface-900 mb-1">CareQueue AI</h2>
             <p className="text-sm text-surface-500 mb-6">Ask me about clinics, wait times, or symptoms</p>
             <div className="space-y-2 max-w-xs mx-auto">
               {quickPrompts.map((prompt) => (
-                <button
+                <Button
                   key={prompt}
                   onClick={() => handleSend(prompt)}
-                  className="w-full text-left px-4 py-3 rounded-xl border border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 transition-all text-sm text-surface-700"
+                  variant="outline"
+                  className="w-full h-auto justify-start text-left px-4 py-3 rounded-xl border-surface-200 bg-white hover:border-brand-300 hover:bg-brand-50 text-sm text-surface-700"
                 >
                   {prompt}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -149,21 +153,22 @@ export function ChatInterface({ initialContext = [] }: Props) {
       {/* Input bar */}
       <div className="border-t border-surface-200 bg-white px-4 py-3">
         <div className="flex gap-2 max-w-lg mx-auto">
-          <input
+          <Input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(input)}
             placeholder="Ask about clinics or symptoms..."
-            className="flex-1 px-4 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
+            className="flex-1 h-10 px-4 rounded-xl border-surface-200 bg-surface-50 text-sm focus-visible:ring-brand-300"
           />
-          <button
+          <Button
             onClick={() => handleSend(input)}
             disabled={!input.trim() || isTyping}
-            className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center hover:bg-brand-600 transition-colors disabled:opacity-40 shrink-0"
+            size="icon"
+            className="w-10 h-10 rounded-xl bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-40 shrink-0"
           >
             <Send size={16} />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

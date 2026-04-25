@@ -8,23 +8,23 @@ export interface AuthUser {
 
 export function getUser(): AuthUser | null {
   if (typeof window === 'undefined') return null
-  const raw = localStorage.getItem('cf_user')
+  const raw = localStorage.getItem('carequeue_user')
   return raw ? (JSON.parse(raw) as AuthUser) : null
 }
 
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem('cf_token')
+  return localStorage.getItem('carequeue_token')
 }
 
 export function logout(): void {
   if (typeof window === 'undefined') return
-  localStorage.removeItem('cf_token')
-  localStorage.removeItem('cf_user')
+  localStorage.removeItem('carequeue_token')
+  localStorage.removeItem('carequeue_user')
   window.location.href = '/auth/login'
 }
 
 export function saveAuth(token: string, user: AuthUser): void {
-  localStorage.setItem('cf_token', token)
-  localStorage.setItem('cf_user', JSON.stringify(user))
+  localStorage.setItem('carequeue_token', token)
+  localStorage.setItem('carequeue_user', JSON.stringify(user))
 }

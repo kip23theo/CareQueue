@@ -5,6 +5,11 @@ import { getUser } from '@/lib/auth'
 import { clinicAdminApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import type { Clinic } from '@/types'
 import axios from 'axios'
 import { Save, Loader2, Plus, X, Clock } from 'lucide-react'
@@ -72,32 +77,32 @@ export default function AdminSettingsPage() {
 
       <form onSubmit={handleSave} className="space-y-5">
         {/* Basic info */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm space-y-4">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm space-y-4">
           <h2 className="font-semibold font-heading text-surface-900">Basic Information</h2>
           <div>
-            <label className="block text-xs font-medium text-surface-600 mb-1.5">Clinic Name</label>
-            <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
-              className="w-full px-4 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white"
+            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Clinic Name</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
+              className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
               placeholder="City Clinic" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-surface-600 mb-1.5">Address</label>
-            <input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))}
-              className="w-full px-4 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white"
+            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Address</Label>
+            <Input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))}
+              className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
               placeholder="123 Main St, City" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Phone</label>
-              <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))}
-                className="w-full px-4 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white"
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Phone</Label>
+              <Input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))}
+                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
                 placeholder="+91 ..." />
             </div>
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Avg consultation (min)</label>
-              <input type="number" min="1" value={form.avg_consult_time}
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Avg consultation (min)</Label>
+              <Input type="number" min="1" value={form.avg_consult_time}
                 onChange={e => setForm(f => ({...f, avg_consult_time: Number(e.target.value)}))}
-                className="w-full px-4 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white" />
+                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm" />
             </div>
           </div>
           <div className="flex items-center justify-between">
@@ -105,36 +110,35 @@ export default function AdminSettingsPage() {
               <p className="text-sm font-medium text-surface-700">Open today</p>
               <p className="text-xs text-surface-500">Toggle clinic availability</p>
             </div>
-            <button type="button" onClick={() => setForm(f => ({...f, is_open: !f.is_open}))}
-              className={cn(
-                'px-4 py-2 rounded-xl text-sm font-semibold transition-all',
-                form.is_open ? 'bg-green-500 text-white' : 'bg-surface-200 text-surface-600'
-              )}>
-              {form.is_open ? 'Open' : 'Closed'}
-            </button>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.is_open} onCheckedChange={(checked) => setForm(f => ({...f, is_open: checked}))} />
+              <span className="text-sm font-semibold text-surface-700">{form.is_open ? 'Open' : 'Closed'}</span>
+            </div>
           </div>
-        </div>
+        </Card>
 
         {/* Specializations */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
           <h2 className="font-semibold font-heading text-surface-900 mb-3">Specializations</h2>
           <div className="flex flex-wrap gap-2">
             {SPEC_OPTIONS.map(s => (
-              <button key={s} type="button" onClick={() => toggleSpec(s)}
+              <Button key={s} type="button" onClick={() => toggleSpec(s)}
+                size="sm"
+                variant={form.specializations.includes(s) ? 'default' : 'secondary'}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                  'h-8 px-3 rounded-full text-sm font-medium transition-all',
                   form.specializations.includes(s)
                     ? 'bg-brand-500 text-white'
                     : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
                 )}>
                 {s}
-              </button>
+              </Button>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Opening hours */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
           <h2 className="font-semibold font-heading text-surface-900 mb-4 flex items-center gap-2">
             <Clock size={16} className="text-brand-500" />
             Opening Hours
@@ -147,32 +151,34 @@ export default function AdminSettingsPage() {
                   <span className="text-sm text-surface-400 flex-1">Closed</span>
                 ) : (
                   <div className="flex items-center gap-2 flex-1">
-                    <input type="time" value={form.opening_hours[day]?.open ?? '09:00'}
+                    <Input type="time" value={form.opening_hours[day]?.open ?? '09:00'}
                       onChange={e => setForm(f => ({...f, opening_hours: {...f.opening_hours, [day]: {...(f.opening_hours[day] || {open:'09:00',close:'18:00'}), open: e.target.value}}}))}
-                      className="px-3 py-1.5 rounded-lg border border-surface-200 text-sm focus:outline-none focus:border-brand-400" />
+                      className="h-8 w-32 rounded-lg border-surface-200 px-3 py-1.5 text-sm" />
                     <span className="text-surface-400 text-sm">—</span>
-                    <input type="time" value={form.opening_hours[day]?.close ?? '18:00'}
+                    <Input type="time" value={form.opening_hours[day]?.close ?? '18:00'}
                       onChange={e => setForm(f => ({...f, opening_hours: {...f.opening_hours, [day]: {...(f.opening_hours[day] || {open:'09:00',close:'18:00'}), close: e.target.value}}}))}
-                      className="px-3 py-1.5 rounded-lg border border-surface-200 text-sm focus:outline-none focus:border-brand-400" />
+                      className="h-8 w-32 rounded-lg border-surface-200 px-3 py-1.5 text-sm" />
                   </div>
                 )}
-                <button type="button"
+                <Button type="button"
+                  size="sm"
+                  variant="secondary"
                   onClick={() => setForm(f => ({...f, opening_hours: {...f.opening_hours, [day]: f.opening_hours[day] === null ? {open:'09:00',close:'18:00'} : null}}))}
                   className={cn('text-xs px-2 py-1 rounded-lg font-medium transition-colors',
                     form.opening_hours[day] === null
                       ? 'bg-green-100 text-green-700 hover:bg-green-200'
                       : 'bg-surface-100 text-surface-500 hover:bg-red-50 hover:text-red-600')}>
                   {form.opening_hours[day] === null ? 'Open' : 'Close'}
-                </button>
+                </Button>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
-        <button type="submit" disabled={isSaving}
-          className="w-full py-3 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25">
+        <Button type="submit" disabled={isSaving}
+          className="w-full h-11 rounded-xl bg-brand-500 text-white font-bold hover:bg-brand-600 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25">
           {isSaving ? <><Loader2 size={18} className="animate-spin" />Saving...</> : <><Save size={18} />Save Settings</>}
-        </button>
+        </Button>
       </form>
     </div>
   )

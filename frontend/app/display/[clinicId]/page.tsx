@@ -72,7 +72,7 @@ export default function DisplayPage() {
             <Activity size={24} className="text-white" />
           </div>
           <div>
-            <p className="text-white/40 text-sm font-medium tracking-wider uppercase">ClinicFlow AI</p>
+            <p className="text-white/40 text-sm font-medium tracking-wider uppercase">CareQueue AI</p>
             <p className="text-white text-2xl font-bold font-heading">{clinic?.name ?? 'Loading...'}</p>
           </div>
         </div>

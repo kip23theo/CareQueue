@@ -1,5 +1,5 @@
 """
-ClinicFlow AI Service — OpenAI Integration
+CareQueue AI Service - OpenAI Integration
 Drop this file into: backend/app/services/ai_service.py
 """
 
@@ -22,7 +22,7 @@ async def ai_chat(message: str, clinic_context: Optional[dict] = None) -> str:
     Pass clinic_context (name, is_open, est_wait_mins) if you have it.
     """
     system = (
-        "You are a helpful medical assistant for ClinicFlow, a clinic queue app. "
+        "You are a helpful medical assistant for CareQueue, a clinic queue app. "
         "Help patients understand wait times, triage symptoms (non-emergency only), "
         "and decide which clinic to visit. Always recommend seeing a doctor for any "
         "serious or emergency symptoms. Keep replies concise and friendly."

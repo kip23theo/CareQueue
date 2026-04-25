@@ -1,8 +1,8 @@
-# ClinicFlow Backend Architecture
+# CareQueue Backend Architecture
 
 ## High-Level Architecture
 
-ClinicFlow backend is a FastAPI service that manages clinic queues, staff actions, patient token status, real-time updates, and AI-assisted predictions.
+CareQueue backend is a FastAPI service that manages clinic queues, staff actions, patient token status, real-time updates, and AI-assisted predictions.
 
 Core layers:
 

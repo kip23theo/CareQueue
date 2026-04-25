@@ -4,6 +4,8 @@ import { cn, formatTokenDisplay } from '@/lib/utils'
 import type { QueueToken } from '@/types'
 import { TokenCard } from '@/components/ui/TokenCard'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Siren } from 'lucide-react'
 
 interface Props {
@@ -32,13 +34,13 @@ export function QueueList({
 
   if (tokens.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <Card className="flex flex-col items-center justify-center py-16 text-center border-dashed">
         <div className="w-16 h-16 rounded-2xl bg-surface-100 flex items-center justify-center mb-4">
           <span className="text-2xl">🏥</span>
         </div>
         <p className="text-surface-600 font-medium">Queue is empty</p>
         <p className="text-surface-400 text-sm mt-1">No patients waiting</p>
-      </div>
+      </Card>
     )
   }
 
@@ -82,17 +84,17 @@ export function QueueList({
 
       {/* Call next button */}
       {onNext && !currentToken && (
-        <button
+        <Button
           onClick={onNext}
           disabled={isLoading || waiting.length === 0}
           className={cn(
-            'w-full py-3 rounded-xl font-semibold text-white transition-all',
-            'bg-brand-500 hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed',
+            'w-full h-11 rounded-xl font-semibold text-white transition-all',
+            'bg-brand-500 hover:bg-brand-600',
             'shadow-sm hover:shadow-md'
           )}
         >
           {isLoading ? 'Calling...' : 'Call Next Patient'}
-        </button>
+        </Button>
       )}
 
       {/* Waiting queue */}

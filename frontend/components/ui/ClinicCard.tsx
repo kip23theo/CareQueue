@@ -2,6 +2,8 @@
 
 import { cn, formatDistance, formatWaitTime } from '@/lib/utils'
 import type { Clinic } from '@/types'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { MapPin, Clock, Star, Users, ChevronRight, Zap } from 'lucide-react'
 
 interface Props {
@@ -28,10 +30,10 @@ function QueueDot({ count }: { count: number }) {
     'bg-red-50'
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium', bg, label)}>
+    <Badge className={cn('gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border-transparent', bg, label)}>
       <span className={cn('w-2 h-2 rounded-full', color, count > 5 && 'animate-pulse')} />
       {count} waiting
-    </span>
+    </Badge>
   )
 }
 
@@ -46,7 +48,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export function ClinicCard({ clinic, onSelect, isBestMatch, aiReason }: Props) {
   return (
-    <div
+    <Card
       className={cn(
         'relative rounded-2xl border bg-white p-5 transition-all duration-200',
         'hover:shadow-md hover:border-brand-300 cursor-pointer',
@@ -129,6 +131,6 @@ export function ClinicCard({ clinic, onSelect, isBestMatch, aiReason }: Props) {
           <p className="text-xs text-brand-700 leading-relaxed">✦ {aiReason}</p>
         </div>
       )}
-    </div>
+    </Card>
   )
 }

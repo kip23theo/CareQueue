@@ -1,5 +1,5 @@
 """
-ClinicFlow AI Router
+CareQueue AI Router
 Drop this file into: backend/app/routers/ai.py
 
 Then in your main app (app/main.py), add:

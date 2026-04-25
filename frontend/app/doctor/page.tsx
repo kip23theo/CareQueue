@@ -8,6 +8,16 @@ import { cn, formatTokenDisplay } from '@/lib/utils'
 import type { DoctorQueue, QueueToken } from '@/types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { connectSSE } from '@/lib/sse'
 import axios from 'axios'
 import {
@@ -18,13 +28,13 @@ import {
 
 function StatPill({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-surface-200">
+    <Card className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-surface-200">
       <span className="text-brand-500">{icon}</span>
       <div>
         <p className="text-xs text-surface-500">{label}</p>
         <p className="text-sm font-bold text-surface-900 font-heading">{value}</p>
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -127,17 +137,19 @@ export default function DoctorPage() {
         </div>
         <div className="flex items-center gap-3">
           <SSEStatusDot status={sseStatus} showLabel />
-          <button
+          <Button
             onClick={() => setShowDelayModal(true)}
+            variant="secondary"
+            size="sm"
             className="px-3 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium hover:bg-amber-100 transition-colors flex items-center gap-1.5"
           >
             <AlertCircle size={14} />
             Running late?
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleToggleAvailability}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all',
+              'flex items-center gap-2 h-10 px-4 rounded-xl font-semibold text-sm transition-all',
               isAvailable
                 ? 'bg-green-500 text-white hover:bg-green-600'
                 : 'bg-surface-200 text-surface-600 hover:bg-surface-300'
@@ -145,7 +157,7 @@ export default function DoctorPage() {
           >
             {isAvailable ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
             {isAvailable ? 'Available' : 'Unavailable'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -162,7 +174,7 @@ export default function DoctorPage() {
         {isLoading ? (
           <div className="skeleton rounded-2xl h-48" />
         ) : current ? (
-          <div className={cn(
+          <Card className={cn(
             'rounded-2xl border-2 p-6 bg-white transition-all animate-fade-in',
             current.status === 'IN_CONSULTATION' ? 'border-brand-400 shadow-md shadow-brand-100' : 'border-surface-200'
           )}>
@@ -184,45 +196,47 @@ export default function DoctorPage() {
               </div>
             )}
             <div className="flex gap-2 flex-wrap">
-              <button
+              <Button
                 onClick={() => handleComplete(current._id)}
                 disabled={actionLoading}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors disabled:opacity-50"
+                className="h-10 px-5 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-50"
               >
                 <CheckCircle2 size={16} />
                 Complete
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => handleSkip(current._id)}
                 disabled={actionLoading}
+                variant="secondary"
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-100 text-amber-700 font-semibold hover:bg-amber-200 transition-colors disabled:opacity-50"
               >
                 <SkipForward size={16} />
                 Skip
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => handleEmergency(current._id)}
                 disabled={actionLoading}
+                variant="secondary"
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition-colors disabled:opacity-50"
               >
                 <Siren size={16} />
                 Emergency
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         ) : (
-          <div className="rounded-2xl border-2 border-dashed border-surface-300 p-8 text-center bg-white">
+          <Card className="rounded-2xl border-2 border-dashed border-surface-300 p-8 text-center bg-white">
             <Stethoscope size={32} className="text-surface-300 mx-auto mb-3" />
             <p className="text-surface-600 font-medium mb-4">No patient currently being served</p>
-            <button
+            <Button
               onClick={handleCallNext}
               disabled={actionLoading || (queue?.waiting_count ?? 0) === 0}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50 shadow-sm shadow-brand-500/25"
+              className="inline-flex h-11 items-center gap-2 px-6 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 disabled:opacity-50 shadow-sm shadow-brand-500/25"
             >
               {actionLoading ? <Loader2 size={18} className="animate-spin" /> : <PhoneCall size={18} />}
               Call Next Patient
-            </button>
-          </div>
+            </Button>
+          </Card>
         )}
       </div>
 
@@ -234,7 +248,7 @@ export default function DoctorPage() {
             {nextFive.map((t, i) => (
               <div
                 key={t._id}
-                className="bg-white rounded-xl border border-surface-200 p-4 flex items-center gap-3 animate-slide-up"
+                className="rounded-xl border border-surface-200 bg-white p-4 flex items-center gap-3 animate-slide-up"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-xs font-bold text-surface-600">
@@ -254,36 +268,39 @@ export default function DoctorPage() {
       )}
 
       {/* Delay modal */}
-      {showDelayModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm animate-slide-up">
-            <h3 className="font-bold font-heading text-surface-900 mb-4">Update delay</h3>
-            <p className="text-sm text-surface-500 mb-4">How many minutes are you running late?</p>
-            <input
-              type="number"
-              min="0"
-              max="60"
-              value={delayMins}
-              onChange={(e) => setDelayMins(Number(e.target.value))}
-              className="w-full px-4 py-3 rounded-xl border border-surface-200 text-center text-2xl font-bold font-heading mb-4 focus:outline-none focus:border-brand-400"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDelayModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-surface-200 text-surface-600 font-medium hover:bg-surface-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveDelay}
-                className="flex-1 py-2.5 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-colors"
-              >
-                Save
-              </button>
-            </div>
+      <Dialog open={showDelayModal} onOpenChange={setShowDelayModal}>
+        <DialogContent className="max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-bold font-heading text-surface-900">Update delay</DialogTitle>
+            <DialogDescription className="text-sm text-surface-500">
+              How many minutes are you running late?
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="number"
+            min="0"
+            max="60"
+            value={delayMins}
+            onChange={(e) => setDelayMins(Number(e.target.value))}
+            className="h-14 rounded-xl border-surface-200 text-center text-2xl font-bold font-heading"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDelayModal(false)}
+              className="flex-1 rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveDelay}
+              className="flex-1 rounded-xl bg-brand-500 text-white hover:bg-brand-600"
+            >
+              Save
+            </Button>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

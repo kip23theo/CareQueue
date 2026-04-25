@@ -5,6 +5,8 @@ import { getUser, logout } from '@/lib/auth'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Users, BarChart3, Bell,
   Settings, ClipboardList, Stethoscope,
@@ -60,7 +62,7 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
     <aside className="flex flex-col w-64 min-h-screen bg-surface-900 text-white shrink-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold font-heading text-white tracking-tight">ClinicFlow AI</h1>
+        <h1 className="text-lg font-bold font-heading text-white tracking-tight">CareQueue AI</h1>
         <p className="text-xs text-white/40 mt-0.5">Queue Management</p>
       </div>
 
@@ -72,9 +74,9 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-white truncate">{user.name}</p>
-            <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', roleColors[user.role])}>
+            <Badge className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium border-transparent', roleColors[user.role])}>
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-            </span>
+            </Badge>
           </div>
         </div>
       </div>
@@ -84,20 +86,23 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/admin' && item.href !== '/doctor' && item.href !== '/receptionist' && pathname.startsWith(item.href))
           return (
-            <Link
+            <Button
               key={item.href}
-              href={item.href}
+              asChild
+              variant="ghost"
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
+                'w-full justify-start gap-3 px-3 py-2.5 h-auto rounded-xl text-sm font-medium transition-all duration-150',
                 isActive
                   ? 'bg-brand-500 text-white shadow-sm'
                   : 'text-white/60 hover:text-white hover:bg-white/8'
               )}
             >
-              {item.icon}
-              {item.label}
-              {isActive && <ChevronRight size={14} className="ml-auto opacity-60" />}
-            </Link>
+              <Link href={item.href}>
+                {item.icon}
+                {item.label}
+                {isActive && <ChevronRight size={14} className="ml-auto opacity-60" />}
+              </Link>
+            </Button>
           )
         })}
       </nav>
@@ -107,13 +112,14 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
         <div className="flex items-center gap-2">
           <SSEStatusDot status={sseStatus} showLabel />
         </div>
-        <button
+        <Button
           onClick={logout}
-          className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
+          variant="ghost"
+          className="h-auto px-0 justify-start gap-2 text-sm text-white/50 hover:text-white hover:bg-transparent"
         >
           <LogOut size={16} />
           Sign out
-        </button>
+        </Button>
       </div>
     </aside>
   )

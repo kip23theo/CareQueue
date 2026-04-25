@@ -15,7 +15,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'ClinicFlow AI — Real-time Queue Management',
+  title: 'CareQueue AI — Real-time Queue Management',
   description: 'Uber-style real-time clinic queue management. Join the queue, track your turn, and get AI-powered clinic recommendations.',
 }
 
