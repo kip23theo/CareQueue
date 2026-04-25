@@ -107,7 +107,7 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
     return JoinQueueResponse(
         token_id=str(token.id),
         clinic_id=str(token.clinic_id),
-        doctor_id=str(token.doctor_id),
+        doctor_id=str(token.doctor_id) if token.doctor_id else None,
         token_number=token.token_number,
         status=token.status,
         position=token.position,
