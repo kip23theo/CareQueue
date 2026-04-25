@@ -5,7 +5,7 @@ from app.api.schemas.clinic import (
     ClinicDetailResponse,
     ClinicListItem,
     DoctorSummary,
-    QueueTokenResponse,
+    QueueTokenLiveResponse,
 )
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
@@ -91,8 +91,8 @@ async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
     )
 
 
-@router.get("/{clinic_id}/queue/live", response_model=list[QueueTokenResponse])
-async def get_live_queue(clinic_id: str) -> list[QueueTokenResponse]:
+@router.get("/{clinic_id}/queue/live", response_model=list[QueueTokenLiveResponse])
+async def get_live_queue(clinic_id: str) -> list[QueueTokenLiveResponse]:
     try:
         clinic_object_id = PydanticObjectId(clinic_id)
     except ValueError as exc:
@@ -121,7 +121,7 @@ async def get_live_queue(clinic_id: str) -> list[QueueTokenResponse]:
     ).sort("+position").to_list()
 
     return [
-        QueueTokenResponse(
+        QueueTokenLiveResponse(
             token_number=token.token_number,
             status=token.status,
             est_wait_mins=token.est_wait_mins,

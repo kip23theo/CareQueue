@@ -38,7 +38,7 @@ class ClinicDetailResponse(BaseModel):
     doctors: list[DoctorSummary]
 
 
-class QueueTokenResponse(BaseModel):
+class QueueTokenLiveResponse(BaseModel):
     token_number: int
     status: QueueStatus
     est_wait_mins: int
