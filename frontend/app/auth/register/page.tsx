@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
-import { Activity, Loader2, Plus, Trash2 } from 'lucide-react'
+import { Activity, Eye, EyeOff, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { authApi } from '@/lib/api-calls'
 import { Button } from '@/components/ui/button'
@@ -52,6 +52,8 @@ export default function RegisterClinicPage() {
   const [adminName, setAdminName] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
+  const [showAdminPassword, setShowAdminPassword] = useState(false)
+  const [showStaffPasswords, setShowStaffPasswords] = useState<Record<number, boolean>>({})
 
   const [staff, setStaff] = useState<StaffDraft[]>([])
 
@@ -65,6 +67,11 @@ export default function RegisterClinicPage() {
 
   const removeStaff = (idx: number) => {
     setStaff((prev) => prev.filter((_, i) => i !== idx))
+    setShowStaffPasswords({})
+  }
+
+  const toggleStaffPassword = (idx: number) => {
+    setShowStaffPasswords((prev) => ({ ...prev, [idx]: !prev[idx] }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,7 +180,26 @@ export default function RegisterClinicPage() {
             </div>
             <div>
               <Label className="mb-1.5 block">Password</Label>
-              <Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} required placeholder="Minimum 6 characters" />
+              <div className="relative">
+                <Input
+                  type={showAdminPassword ? 'text' : 'password'}
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  required
+                  placeholder="Minimum 6 characters"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowAdminPassword((prev) => !prev)}
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-surface-400 hover:text-surface-600"
+                  aria-label={showAdminPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showAdminPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </Button>
+              </div>
             </div>
           </Card>
 
@@ -226,7 +252,25 @@ export default function RegisterClinicPage() {
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-3">
-                      <Input type="password" value={entry.password} onChange={(e) => updateStaff(idx, { password: e.target.value })} placeholder="Password" />
+                      <div className="relative">
+                        <Input
+                          type={showStaffPasswords[idx] ? 'text' : 'password'}
+                          value={entry.password}
+                          onChange={(e) => updateStaff(idx, { password: e.target.value })}
+                          placeholder="Password"
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleStaffPassword(idx)}
+                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-surface-400 hover:text-surface-600"
+                          aria-label={showStaffPasswords[idx] ? 'Hide password' : 'Show password'}
+                        >
+                          {showStaffPasswords[idx] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </Button>
+                      </div>
                       {entry.role === 'doctor' ? (
                         <Input value={entry.specialization} onChange={(e) => updateStaff(idx, { specialization: e.target.value })} placeholder="Specialization" />
                       ) : (
