@@ -1,6 +1,6 @@
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Path, Query, status
 
 from app.api.schemas.clinic import (
     ClinicDetailResponse,
@@ -35,11 +35,23 @@ def _clinic_distance_score(clinic: Clinic, lat: float, lng: float) -> float:
     return abs(float(clinic_lat) - lat) + abs(float(clinic_lng) - lng)
 
 
-@router.get("/nearby", response_model=list[ClinicListItem])
+@router.get(
+    "/nearby",
+    response_model=list[ClinicListItem],
+    summary="Get nearby clinics",
+    description=(
+        "Returns patient-facing clinic cards sorted by approximate distance. "
+        "Current distance sorting is a lightweight placeholder until full "
+        "MongoDB GeoJSON radius filtering is enabled."
+    ),
+    responses={
+        200: {"description": "Nearby clinics returned successfully"},
+    },
+)
 async def get_nearby_clinics(
-    lat: float,
-    lng: float,
-    radius: float = 5.0,
+    lat: float = Query(..., description="Patient latitude", examples=[28.6139]),
+    lng: float = Query(..., description="Patient longitude", examples=[77.2090]),
+    radius: float = Query(5.0, description="Search radius in kilometers", examples=[5.0]),
 ) -> list[ClinicListItem]:
     clinics = await Clinic.find_all().to_list()
     sorted_clinics = sorted(clinics, key=lambda clinic: _clinic_distance_score(clinic, lat, lng))
@@ -57,8 +69,20 @@ async def get_nearby_clinics(
     ]
 
 
-@router.get("/{clinic_id}", response_model=ClinicDetailResponse)
-async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
+@router.get(
+    "/{clinic_id}",
+    response_model=ClinicDetailResponse,
+    summary="Get clinic details",
+    description="Returns full clinic profile details and doctors linked to the clinic.",
+    responses={
+        200: {"description": "Clinic details returned successfully"},
+        400: {"description": "Invalid clinic_id format"},
+        404: {"description": "Clinic not found"},
+    },
+)
+async def get_clinic_detail(
+    clinic_id: str = Path(..., description="MongoDB ObjectId of the clinic")
+) -> ClinicDetailResponse:
     clinic_object_id = _parse_clinic_id(clinic_id)
 
     clinic = await Clinic.get(clinic_object_id)
@@ -96,8 +120,23 @@ async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
     )
 
 
-@router.get("/{clinic_id}/queue/live", response_model=list[QueueTokenLiveResponse])
-async def get_live_queue(clinic_id: str) -> list[QueueTokenLiveResponse]:
+@router.get(
+    "/{clinic_id}/queue/live",
+    response_model=list[QueueTokenLiveResponse],
+    summary="Get live clinic queue",
+    description=(
+        "Returns the active queue snapshot for a clinic. Tokens are sorted by "
+        "position ascending and include only live queue statuses."
+    ),
+    responses={
+        200: {"description": "Live queue returned successfully"},
+        400: {"description": "Invalid clinic_id format"},
+        404: {"description": "Clinic not found"},
+    },
+)
+async def get_live_queue(
+    clinic_id: str = Path(..., description="MongoDB ObjectId of the clinic")
+) -> list[QueueTokenLiveResponse]:
     clinic_object_id = _parse_clinic_id(clinic_id)
 
     clinic = await Clinic.get(clinic_object_id)
