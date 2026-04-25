@@ -9,7 +9,7 @@ from app.models.enums import QueueStatus
 
 class QueueToken(TimestampMixin, Document):
     clinic_id: PydanticObjectId
-    doctor_id: PydanticObjectId
+    doctor_id: PydanticObjectId | None = None
     token_number: int
     patient_name: str
     patient_phone: str

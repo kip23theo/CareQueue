@@ -58,16 +58,6 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Doctor not found",
             )
-    else:
-        doctor = await Doctor.find(
-            Doctor.clinic_id == clinic_id,
-            {"is_available": True},
-        ).first_or_none()
-        if doctor is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Doctor not found",
-            )
 
     now = datetime.now(timezone.utc)
     today = now.date().isoformat()
@@ -90,7 +80,7 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
 
     token = QueueToken(
         clinic_id=clinic_id,
-        doctor_id=doctor.id,
+        doctor_id=doctor.id if doctor else None,
         token_number=token_number,
         patient_name=request.patient_name,
         patient_phone=request.patient_phone,
@@ -121,19 +111,32 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
     "/{token_id}/status",
     response_model=TokenStatusResponse,
     summary="Get token status",
-    description="Placeholder endpoint for live patient token status. Database logic comes later.",
+    description="Return live patient token status, queue position, ETA, and timestamps.",
+    responses={
+        200: {"description": "Token status returned successfully"},
+        400: {"description": "Invalid token_id format"},
+        404: {"description": "Token not found"},
+    },
 )
 async def get_token_status(token_id: str) -> TokenStatusResponse:
+    token_object_id = _parse_object_id(token_id, "token_id")
+    token = await QueueToken.get(token_object_id)
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token not found",
+        )
+
     return TokenStatusResponse(
-        token_id=token_id,
-        clinic_id="placeholder_clinic_id",
-        doctor_id=None,
-        token_number=0,
-        status=QueueStatus.WAITING,
-        position=0,
-        est_wait_mins=0,
-        joined_at="2026-01-01T00:00:00Z",
-        updated_at="2026-01-01T00:00:00Z",
+        token_id=str(token.id),
+        clinic_id=str(token.clinic_id),
+        doctor_id=str(token.doctor_id) if token.doctor_id else None,
+        token_number=token.token_number,
+        status=token.status,
+        position=token.position,
+        est_wait_mins=token.est_wait_mins,
+        joined_at=token.joined_at,
+        updated_at=token.updated_at,
     )
 
 
