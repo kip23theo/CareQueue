@@ -130,6 +130,7 @@ export default function AdminDashboard() {
           { href: '/admin/queue', label: 'Manage Live Queue', desc: `${queue?.waiting.length ?? 0} patients waiting` },
           { href: '/admin/doctors', label: 'View Doctors', desc: 'Manage availability & delays' },
           { href: '/admin/analytics', label: 'Analytics', desc: 'Performance metrics & trends' },
+          { href: '/admin/reviews', label: 'Patient Reviews', desc: 'Doctor and clinic star ratings' },
           { href: '/admin/settings', label: 'Clinic Settings', desc: 'Profile & opening hours' },
         ].map((item) => (
           <Button

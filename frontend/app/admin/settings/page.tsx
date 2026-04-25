@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getUser } from '@/lib/auth'
-import { clinicAdminApi } from '@/lib/api-calls'
+import { clinicAdminApi, clinicsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,8 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({
     name: '', address: '', phone: '',
+    latitude: '',
+    longitude: '',
     avg_consult_time: 15,
     is_open: true,
     specializations: [] as string[],
@@ -35,8 +37,21 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     if (!user?.clinic_id) return
-    // Would fetch clinic data here
-    // clinicsApi.getById(user.clinic_id).then(({ data }) => { ... })
+    clinicsApi.getById(user.clinic_id).then(({ data }) => {
+      const coords = data.location?.coordinates ?? [0, 0]
+      setForm((prev) => ({
+        ...prev,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        latitude: String(coords[1] ?? ''),
+        longitude: String(coords[0] ?? ''),
+        avg_consult_time: data.avg_consult_time,
+        is_open: data.is_open,
+        specializations: data.specializations,
+        opening_hours: { ...prev.opening_hours, ...(data.opening_hours ?? {}) },
+      }))
+    }).catch(() => {})
   }, [user?.clinic_id])
 
   const handleSave = async (e: React.FormEvent) => {
@@ -48,6 +63,8 @@ export default function AdminSettingsPage() {
         name: form.name,
         address: form.address,
         phone: form.phone,
+        latitude: Number(form.latitude),
+        longitude: Number(form.longitude),
         avg_consult_time: form.avg_consult_time,
         is_open: form.is_open,
         specializations: form.specializations,
@@ -102,6 +119,20 @@ export default function AdminSettingsPage() {
               <Input type="number" min="1" value={form.avg_consult_time}
                 onChange={e => setForm(f => ({...f, avg_consult_time: Number(e.target.value)}))}
                 className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Latitude</Label>
+              <Input value={form.latitude} onChange={e => setForm(f => ({...f, latitude: e.target.value}))}
+                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
+                placeholder="28.6139" />
+            </div>
+            <div>
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Longitude</Label>
+              <Input value={form.longitude} onChange={e => setForm(f => ({...f, longitude: e.target.value}))}
+                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
+                placeholder="77.2090" />
             </div>
           </div>
           <div className="flex items-center justify-between">

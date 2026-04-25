@@ -1,10 +1,13 @@
 from typing import Any
 
-from beanie import Document
+from datetime import datetime
+
+from beanie import Document, PydanticObjectId
 from pydantic import Field
 from pymongo import IndexModel
 
 from app.models.base import TimestampMixin
+from app.models.enums import ClinicVerificationStatus
 
 
 class Clinic(TimestampMixin, Document):
@@ -18,9 +21,14 @@ class Clinic(TimestampMixin, Document):
     is_open: bool = True
     rating: float = 0.0
     delay_buffer: int = 0
+    verification_status: ClinicVerificationStatus = ClinicVerificationStatus.PENDING
+    verified_at: datetime | None = None
+    verified_by: PydanticObjectId | None = None
+    rejection_reason: str | None = None
 
     class Settings:
         name = "clinics"
         indexes = [
             IndexModel([("location", "2dsphere")]),
+            IndexModel([("verification_status", 1)]),
         ]

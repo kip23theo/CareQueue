@@ -12,6 +12,8 @@ sys.path.append(str(BACKEND_DIR))
 
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
+from app.models.medical_document import MedicalDocument
+from app.models.medical_history import MedicalHistory
 from app.models.notification import Notification
 from app.models.queue_token import QueueToken
 from app.models.review import Review
@@ -40,6 +42,8 @@ async def init_db() -> None:
                 QueueToken,
                 Notification,
                 Review,
+                MedicalHistory,
+                MedicalDocument,
             ],
         )
         print(f"Beanie ODM indexes initialized for database: {database_name}")

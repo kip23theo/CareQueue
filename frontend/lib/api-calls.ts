@@ -1,15 +1,20 @@
 import api from './api'
 import type {
   LoginRequest, LoginResponse,
+  RegisterPatientRequest, RegisterPatientResponse,
+  RegisterClinicRequest, RegisterClinicResponse,
   Clinic, NearbyClinicRequest,
   QueueToken, JoinQueueRequest, JoinQueueResponse,
   AddWalkinRequest, LiveQueue, DoctorQueue,
   Doctor, UpdateDoctorAvailabilityRequest, UpdateDoctorDelayRequest,
   ClinicAnalytics, Notification, Review, AddReviewRequest,
+  ClinicReviewSummary,
+  MedicalDocument, MedicalHistoryEntry, PatientDashboardResponse,
   AIRecommendRequest, AIRecommendResponse,
   AIChatRequest, AIChatResponse,
   AIParsePatientRequest, AIParsePatientResponse,
-  PredictWaitResponse, MessageResponse,
+  PredictWaitResponse,
+  SuperAdminClinic, SuperAdminOverview, SuperAdminUser, VerifyClinicRequest,
 } from '@/types'
 
 import type { AxiosResponse } from 'axios'
@@ -53,6 +58,8 @@ function toClinic(raw: unknown): Clinic {
     is_open: c.is_open ?? true,
     rating: c.rating ?? 0,
     delay_buffer: c.delay_buffer ?? 0,
+    verification_status: c.verification_status,
+    rejection_reason: c.rejection_reason,
     distance_km: c.distance_km,
     queue_length: c.queue_length ?? c.queue_count,
     est_wait_mins: c.est_wait_mins,
@@ -148,6 +155,115 @@ function toLiveQueue(raw: unknown): LiveQueue {
   }
 }
 
+function toSuperAdminOverview(raw: unknown): SuperAdminOverview {
+  const payload = (raw ?? {}) as Partial<SuperAdminOverview>
+  return {
+    clinics: {
+      total: payload.clinics?.total ?? 0,
+      pending: payload.clinics?.pending ?? 0,
+      approved: payload.clinics?.approved ?? 0,
+      rejected: payload.clinics?.rejected ?? 0,
+    },
+    users: {
+      total: payload.users?.total ?? 0,
+      super_admin: payload.users?.super_admin ?? 0,
+      admin: payload.users?.admin ?? 0,
+      doctor: payload.users?.doctor ?? 0,
+      receptionist: payload.users?.receptionist ?? 0,
+    },
+  }
+}
+
+function toSuperAdminClinic(raw: unknown): SuperAdminClinic {
+  const clinic = (raw ?? {}) as Partial<SuperAdminClinic>
+  return {
+    id: clinic.id ?? '',
+    name: clinic.name ?? 'Clinic',
+    address: clinic.address ?? '',
+    phone: clinic.phone ?? '',
+    latitude: clinic.latitude ?? null,
+    longitude: clinic.longitude ?? null,
+    verification_status: clinic.verification_status ?? 'pending',
+    verified_at: clinic.verified_at ?? null,
+    rejection_reason: clinic.rejection_reason ?? null,
+    created_at: clinic.created_at ?? new Date().toISOString(),
+    updated_at: clinic.updated_at ?? new Date().toISOString(),
+    admin: clinic.admin ?? null,
+    user_count: clinic.user_count ?? 0,
+  }
+}
+
+function toSuperAdminUser(raw: unknown): SuperAdminUser {
+  const user = (raw ?? {}) as Partial<SuperAdminUser>
+  return {
+    id: user.id ?? '',
+    name: user.name ?? 'User',
+    email: user.email ?? '',
+    role: user.role ?? 'receptionist',
+    clinic_id: user.clinic_id ?? null,
+    clinic_name: user.clinic_name ?? null,
+    is_active: user.is_active ?? false,
+    created_at: user.created_at ?? new Date().toISOString(),
+    updated_at: user.updated_at ?? new Date().toISOString(),
+  }
+}
+
+function toMedicalHistory(raw: unknown): MedicalHistoryEntry {
+  const entry = (raw ?? {}) as Partial<MedicalHistoryEntry>
+  const now = new Date().toISOString()
+  return {
+    id: entry.id ?? '',
+    patient_user_id: entry.patient_user_id ?? '',
+    clinic_id: entry.clinic_id ?? null,
+    doctor_id: entry.doctor_id ?? null,
+    title: entry.title ?? '',
+    diagnosis: entry.diagnosis ?? '',
+    notes: entry.notes ?? '',
+    prescriptions: entry.prescriptions ?? [],
+    vitals: entry.vitals ?? {},
+    visit_date: entry.visit_date ?? now,
+    follow_up_date: entry.follow_up_date ?? null,
+    created_at: entry.created_at ?? now,
+    updated_at: entry.updated_at ?? now,
+  }
+}
+
+function toMedicalDocument(raw: unknown): MedicalDocument {
+  const document = (raw ?? {}) as Partial<MedicalDocument>
+  const now = new Date().toISOString()
+  return {
+    id: document.id ?? '',
+    patient_user_id: document.patient_user_id ?? '',
+    clinic_id: document.clinic_id ?? null,
+    medical_history_id: document.medical_history_id ?? null,
+    uploaded_by_user_id: document.uploaded_by_user_id ?? null,
+    title: document.title ?? '',
+    document_type: document.document_type ?? 'other',
+    file_url: document.file_url ?? '',
+    description: document.description ?? '',
+    tags: document.tags ?? [],
+    issued_on: document.issued_on ?? null,
+    created_at: document.created_at ?? now,
+    updated_at: document.updated_at ?? now,
+  }
+}
+
+function toReview(raw: unknown): Review {
+  const review = (raw ?? {}) as Partial<Review> & { id?: string }
+  return {
+    _id: review._id ?? review.id ?? '',
+    clinic_id: review.clinic_id ?? '',
+    doctor_id: review.doctor_id ?? null,
+    patient_user_id: review.patient_user_id ?? null,
+    token_id: review.token_id ?? null,
+    target_type: review.target_type ?? 'clinic',
+    rating: review.rating ?? 0,
+    comment: review.comment ?? '',
+    created_at: review.created_at ?? new Date().toISOString(),
+    patient_name: review.patient_name,
+  }
+}
+
 // ── Auth ────────────────────────────────────────────────
 export const authApi = {
   login: (body: LoginRequest) =>
@@ -163,8 +279,31 @@ export const authApi = {
           name: payload.user?.name ?? payload.user?.email ?? 'User',
           email: payload.user?.email ?? body.email,
           role: payload.user?.role ?? 'receptionist',
-          clinic_id: payload.user?.clinic_id ?? payload.user?.clinicId ?? '',
+          clinic_id: payload.user?.clinic_id ?? payload.user?.clinicId ?? null,
+          phone: payload.user?.phone ?? null,
         },
+      }
+      return withData(res, normalized)
+    }),
+  registerPatient: (body: RegisterPatientRequest) =>
+    api.post<unknown>('/auth/register-patient', body).then((res) => {
+      const payload = (res.data ?? {}) as Partial<RegisterPatientResponse>
+      const normalized: RegisterPatientResponse = {
+        id: payload.id ?? '',
+        name: payload.name ?? body.name,
+        email: payload.email ?? body.email,
+        role: 'patient',
+        phone: payload.phone ?? body.phone ?? null,
+      }
+      return withData(res, normalized)
+    }),
+  registerClinic: (body: RegisterClinicRequest) =>
+    api.post<unknown>('/auth/register-clinic', body).then((res) => {
+      const payload = (res.data ?? {}) as Partial<RegisterClinicResponse>
+      const normalized: RegisterClinicResponse = {
+        message: payload.message ?? 'Clinic registered',
+        clinic_id: payload.clinic_id ?? '',
+        verification_status: payload.verification_status ?? 'pending',
       }
       return withData(res, normalized)
     }),
@@ -228,6 +367,33 @@ export const tokensApi = {
       const payload = (res.data ?? {}) as { status?: string; message?: string }
       return withData(res, { message: payload.message ?? payload.status ?? 'Cancelled' })
     }),
+}
+
+// ── Patients ────────────────────────────────────────────
+export const patientsApi = {
+  getDashboard: (patientUserId: string) =>
+    api.get<unknown>(`/patients/${patientUserId}/dashboard`).then((res) => {
+      const payload = (res.data ?? {}) as Partial<PatientDashboardResponse>
+      return withData(res, {
+        patient: {
+          id: payload.patient?.id ?? patientUserId,
+          name: payload.patient?.name ?? 'Patient',
+          email: payload.patient?.email ?? '',
+          phone: payload.patient?.phone ?? null,
+          role: 'patient',
+        },
+        medical_history: (payload.medical_history ?? []).map(toMedicalHistory),
+        documents: (payload.documents ?? []).map(toMedicalDocument),
+      } satisfies PatientDashboardResponse)
+    }),
+  getMedicalHistory: (patientUserId: string) =>
+    api.get<unknown[]>(`/patients/${patientUserId}/medical-history`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toMedicalHistory))
+    ),
+  getDocuments: (patientUserId: string) =>
+    api.get<unknown[]>(`/patients/${patientUserId}/documents`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toMedicalDocument))
+    ),
 }
 
 // ── Queue management (staff) ────────────────────────────
@@ -311,10 +477,34 @@ export const doctorsApi = {
 
 // ── Clinic admin ────────────────────────────────────────
 export const clinicAdminApi = {
-  update: (clinicId: string, body: Partial<Clinic>) =>
+  update: (clinicId: string, body: Partial<Clinic> & { latitude?: number; longitude?: number }) =>
     api.patch<Clinic>(`/admin/clinics/${clinicId}`, body),
   getAnalytics: (clinicId: string, date?: string) =>
     api.get<ClinicAnalytics>(`/admin/clinics/${clinicId}/analytics`, { params: { date } }),
+}
+
+// ── Super admin ────────────────────────────────────────
+export const superAdminApi = {
+  getOverview: () =>
+    api.get<unknown>('/super-admin/overview').then((res) =>
+      withData(res, toSuperAdminOverview(res.data))
+    ),
+  getClinics: (verificationStatus?: 'pending' | 'approved' | 'rejected') =>
+    api.get<unknown>('/super-admin/clinics', {
+      params: verificationStatus ? { verification_status: verificationStatus } : {},
+    }).then((res) => {
+      const payload = Array.isArray(res.data) ? res.data : []
+      return withData(res, payload.map(toSuperAdminClinic))
+    }),
+  verifyClinic: (clinicId: string, body: VerifyClinicRequest) =>
+    api.patch<unknown>(`/super-admin/clinics/${clinicId}/verification`, body).then((res) =>
+      withData(res, toSuperAdminClinic(res.data))
+    ),
+  getUsers: (params?: { clinic_id?: string; role?: SuperAdminUser['role'] }) =>
+    api.get<unknown>('/super-admin/users', { params }).then((res) => {
+      const payload = Array.isArray(res.data) ? res.data : []
+      return withData(res, payload.map(toSuperAdminUser))
+    }),
 }
 
 // ── Notifications ───────────────────────────────────────
@@ -334,13 +524,21 @@ export const notificationsApi = {
 // ── Reviews ─────────────────────────────────────────────
 export const reviewsApi = {
   add: (body: AddReviewRequest) =>
-    api.post<Review>('/reviews', body),
+    api.post<unknown>('/reviews', body).then((res) => withData(res, toReview(res.data))),
   getByClinic: (clinicId: string) =>
-    api.get<unknown>(`/reviews/${clinicId}`).then((res) => {
-      const payload = res.data as { reviews?: Review[] } | Review[]
-      const list = Array.isArray(payload) ? payload : payload?.reviews ?? []
-      return withData(res, list)
-    }),
+    api.get<unknown>(`/reviews/clinic/${clinicId}`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toReview))
+    ),
+  getByDoctor: (doctorId: string) =>
+    api.get<unknown>(`/reviews/doctor/${doctorId}`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toReview))
+    ),
+  getByPatient: (patientUserId: string) =>
+    api.get<unknown>(`/reviews/patient/${patientUserId}`).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toReview))
+    ),
+  getClinicSummary: (clinicId: string) =>
+    api.get<ClinicReviewSummary>(`/reviews/clinic/${clinicId}/summary`),
 }
 
 // ── AI ──────────────────────────────────────────────────

@@ -58,6 +58,16 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Doctor not found",
             )
+    else:
+        doctor = await Doctor.find(
+            Doctor.clinic_id == clinic_id,
+            {"is_available": True},
+        ).first_or_none()
+        if doctor is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Doctor not found",
+            )
 
     now = datetime.now(timezone.utc)
     today = now.date().isoformat()
@@ -80,7 +90,7 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
 
     token = QueueToken(
         clinic_id=clinic_id,
-        doctor_id=doctor.id if doctor else None,
+        doctor_id=doctor.id,
         token_number=token_number,
         patient_name=request.patient_name,
         patient_phone=request.patient_phone,
@@ -144,11 +154,23 @@ async def get_token_status(token_id: str) -> TokenStatusResponse:
     "/{token_id}/cancel",
     response_model=CancelTokenResponse,
     summary="Cancel token",
-    description="Placeholder endpoint for patient token cancellation. Database logic comes later.",
+    description="Marks a patient token as cancelled.",
 )
 async def cancel_token(token_id: str) -> CancelTokenResponse:
+    token_object_id = _parse_object_id(token_id, "token_id")
+    token = await QueueToken.get(token_object_id)
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token not found",
+        )
+
+    token.status = QueueStatus.CANCELLED
+    token.updated_at = datetime.now(timezone.utc)
+    await token.save()
+
     return CancelTokenResponse(
-        token_id=token_id,
-        status=QueueStatus.CANCELLED,
-        updated_at="2026-01-01T00:00:00Z",
+        token_id=str(token.id),
+        status=token.status,
+        updated_at=token.updated_at,
     )

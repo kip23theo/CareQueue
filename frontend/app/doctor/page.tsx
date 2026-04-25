@@ -90,7 +90,7 @@ export default function DoctorPage() {
 
   const handleCallNext = () =>
     handleAction(
-      () => adminQueueApi.callNext(user!.clinic_id, user!.id),
+      () => adminQueueApi.callNext(user?.clinic_id ?? '', user?.id ?? ''),
       'Next patient called'
     )
 

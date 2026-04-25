@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,10 +17,12 @@ from app.api.schemas.clinic import (
 )
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
-from app.models.enums import QueueStatus
+from app.models.enums import ClinicVerificationStatus, QueueStatus
 from app.models.queue_token import QueueToken
 
 router = APIRouter()
+
+EARTH_RADIUS_KM = 6371.0
 
 
 def _parse_clinic_id(clinic_id: str) -> PydanticObjectId:
@@ -32,13 +35,27 @@ def _parse_clinic_id(clinic_id: str) -> PydanticObjectId:
         ) from exc
 
 
-def _clinic_distance_score(clinic: Clinic, lat: float, lng: float) -> float:
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+
+    a = (
+        (math.sin(dlat / 2) ** 2)
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * (math.sin(dlng / 2) ** 2)
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return EARTH_RADIUS_KM * c
+
+
+def _clinic_coords(clinic: Clinic) -> tuple[float, float] | None:
     coordinates = clinic.location.get("coordinates", [])
     if len(coordinates) != 2:
-        return 0.0
+        return None
 
     clinic_lng, clinic_lat = coordinates
-    return abs(float(clinic_lat) - lat) + abs(float(clinic_lng) - lng)
+    return float(clinic_lat), float(clinic_lng)
 
 
 def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
@@ -69,9 +86,8 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
     response_model=list[ClinicListItem],
     summary="Get nearby clinics",
     description=(
-        "Returns patient-facing clinic cards sorted by approximate distance. "
-        "Current distance sorting is a lightweight placeholder until full "
-        "MongoDB GeoJSON radius filtering is enabled."
+        "Returns approved clinics sorted by geo distance from the user location. "
+        "Distance filtering uses latitude/longitude matching with clinic coordinates."
     ),
     responses={
         200: {"description": "Nearby clinics returned successfully"},
@@ -80,22 +96,61 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
 async def get_nearby_clinics(
     lat: float = Query(..., description="Patient latitude", examples=[28.6139]),
     lng: float = Query(..., description="Patient longitude", examples=[77.2090]),
-    radius: float = Query(5.0, description="Search radius in kilometers", examples=[5.0]),
+    radius: float = Query(
+        5000,
+        description="Search radius in meters",
+        examples=[5000],
+        ge=100,
+        le=200000,
+    ),
 ) -> list[ClinicListItem]:
-    clinics = await Clinic.find_all().to_list()
-    sorted_clinics = sorted(clinics, key=lambda clinic: _clinic_distance_score(clinic, lat, lng))
+    clinics = await Clinic.find(
+        Clinic.verification_status == ClinicVerificationStatus.APPROVED
+    ).to_list()
 
-    return [
-        ClinicListItem(
-            id=str(clinic.id),
-            name=clinic.name,
-            address=clinic.address,
-            rating=clinic.rating,
-            avg_consult_time=clinic.avg_consult_time,
-            distance_km=None,
+    today = datetime.now(timezone.utc).date().isoformat()
+    today_tokens = await QueueToken.find(QueueToken.date == today).to_list()
+
+    waiting_count_map: dict[str, int] = {}
+    for token in today_tokens:
+        if token.status != QueueStatus.WAITING:
+            continue
+        clinic_key = str(token.clinic_id)
+        waiting_count_map[clinic_key] = waiting_count_map.get(clinic_key, 0) + 1
+
+    max_radius_km = radius / 1000.0
+    clinic_rows: list[ClinicListItem] = []
+
+    for clinic in clinics:
+        coords = _clinic_coords(clinic)
+        if coords is None:
+            continue
+
+        clinic_lat, clinic_lng = coords
+        distance_km = _haversine_km(lat, lng, clinic_lat, clinic_lng)
+        if distance_km > max_radius_km:
+            continue
+
+        waiting_count = waiting_count_map.get(str(clinic.id), 0)
+        est_wait_mins = (waiting_count * clinic.avg_consult_time) + clinic.delay_buffer
+
+        clinic_rows.append(
+            ClinicListItem(
+                id=str(clinic.id),
+                name=clinic.name,
+                address=clinic.address,
+                rating=clinic.rating,
+                avg_consult_time=clinic.avg_consult_time,
+                distance_km=round(distance_km, 2),
+                specializations=clinic.specializations,
+                is_open=clinic.is_open,
+                queue_length=waiting_count,
+                est_wait_mins=est_wait_mins,
+            )
         )
-        for clinic in sorted_clinics
-    ]
+
+    clinic_rows.sort(key=lambda value: value.distance_km or 0)
+    return clinic_rows
 
 
 @router.get(
@@ -115,7 +170,7 @@ async def get_clinic_detail(
     clinic_object_id = _parse_clinic_id(clinic_id)
 
     clinic = await Clinic.get(clinic_object_id)
-    if clinic is None:
+    if clinic is None or clinic.verification_status != ClinicVerificationStatus.APPROVED:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Clinic not found",
@@ -176,10 +231,14 @@ async def get_live_queue(
         )
 
     today = datetime.now(timezone.utc).date().isoformat()
-    tokens_today = await QueueToken.find(
-        QueueToken.clinic_id == clinic_object_id,
-        QueueToken.date == today,
-    ).sort("+position").to_list()
+    tokens_today = (
+        await QueueToken.find(
+            QueueToken.clinic_id == clinic_object_id,
+            QueueToken.date == today,
+        )
+        .sort("+position")
+        .to_list()
+    )
 
     current = next(
         (token for token in tokens_today if token.status == QueueStatus.IN_CONSULTATION),
@@ -271,7 +330,7 @@ async def clinic_queue_sse(
             "clinic_id": str(clinic_object_id),
             "payload": {},
         }
-        yield f"data: {json.dumps(initial_event)}\n\n"
+        yield f"data: {json.dumps(initial_event)}\\n\\n"
 
         while True:
             if await request.is_disconnected():
@@ -281,7 +340,7 @@ async def clinic_queue_sse(
                 "clinic_id": str(clinic_object_id),
                 "payload": {"heartbeat": True},
             }
-            yield f"data: {json.dumps(heartbeat_event)}\n\n"
+            yield f"data: {json.dumps(heartbeat_event)}\\n\\n"
             await asyncio.sleep(15)
 
     return StreamingResponse(

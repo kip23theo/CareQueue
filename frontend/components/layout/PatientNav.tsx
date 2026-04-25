@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { ArrowLeft, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { getUser, logout } from '@/lib/auth'
 
 interface Props {
   myTokenId?: string
@@ -13,6 +14,8 @@ interface Props {
 export function PatientNav({ myTokenId }: Props) {
   const pathname = usePathname()
   const router = useRouter()
+  const user = getUser()
+  const isPatient = user?.role === 'patient'
 
   const isDeep = pathname !== '/patient' && pathname !== '/patient/clinics'
   const showBack = isDeep
@@ -42,21 +45,38 @@ export function PatientNav({ myTokenId }: Props) {
           )}
         </div>
 
-        {/* Right: My Token shortcut */}
-        {myTokenId && (
-          <Button
-            asChild
-            className={cn(
-              'h-8 rounded-full text-xs font-semibold',
-              'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
-            )}
-          >
-            <Link href={`/patient/token/${myTokenId}`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              My Token
-            </Link>
-          </Button>
-        )}
+        {/* Right: actions */}
+        <div className="flex items-center gap-2">
+          {myTokenId && (
+            <Button
+              asChild
+              className={cn(
+                'h-8 rounded-full text-xs font-semibold',
+                'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
+              )}
+            >
+              <Link href={`/patient/token/${myTokenId}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                My Token
+              </Link>
+            </Button>
+          )}
+
+          {isPatient ? (
+            <>
+              <Button asChild variant="outline" className="h-8 rounded-full text-xs border-surface-200">
+                <Link href="/patient/dashboard">Dashboard</Link>
+              </Button>
+              <Button onClick={logout} variant="ghost" className="h-8 rounded-full text-xs px-3 text-surface-600">
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <Button asChild variant="outline" className="h-8 rounded-full text-xs border-surface-200">
+              <Link href="/auth/login">Sign in</Link>
+            </Button>
+          )}
+        </div>
       </div>
     </nav>
   )

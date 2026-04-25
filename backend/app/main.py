@@ -6,14 +6,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.ai import router as ai_router
+from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.clinics import router as clinics_router
 from app.api.routes.doctors import router as doctors_router
+from app.api.routes.notifications import router as notifications_router
+from app.api.routes.patients import router as patients_router
+from app.api.routes.reviews import router as reviews_router
+from app.api.routes.super_admin import router as super_admin_router
 from app.core.config import get_settings
 from app.api.routes.tokens import router as tokens_router
 from app.db.mongodb import close_mongo_connection, connect_to_mongo
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
+from app.models.medical_document import MedicalDocument
+from app.models.medical_history import MedicalHistory
 from app.models.notification import Notification
 from app.models.queue_token import QueueToken
 from app.models.review import Review
@@ -43,6 +50,11 @@ app.include_router(clinics_router, prefix="/clinics", tags=["clinics"])
 app.include_router(doctors_router)
 app.include_router(ai_router)
 app.include_router(tokens_router, prefix="/tokens", tags=["tokens"])
+app.include_router(admin_router)
+app.include_router(super_admin_router)
+app.include_router(notifications_router)
+app.include_router(patients_router)
+app.include_router(reviews_router)
 
 
 @app.on_event("startup")
@@ -57,6 +69,8 @@ async def startup_event() -> None:
             QueueToken,
             Notification,
             Review,
+            MedicalHistory,
+            MedicalDocument,
         ],
     )
 
