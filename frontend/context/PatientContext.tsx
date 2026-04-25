@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { Clinic, QueueToken } from '@/types'
 
 interface Location {
@@ -52,31 +52,39 @@ export function PatientProvider({ children }: { children: ReactNode }) {
     }
   })
 
-  const setLocation = (loc: Location) => {
+  const setLocation = useCallback((loc: Location) => {
     setLocationState(loc)
     sessionStorage.setItem('cf_location', JSON.stringify(loc))
-  }
+  }, [])
 
-  const setNearbyClinics = (clinics: Clinic[]) => {
+  const setNearbyClinics = useCallback((clinics: Clinic[]) => {
     setNearbyClinicsState(clinics)
     sessionStorage.setItem('cf_nearby_clinics', JSON.stringify(clinics))
-  }
+  }, [])
 
-  const setMyToken = (token: QueueToken | null) => {
+  const setMyToken = useCallback((token: QueueToken | null) => {
     setMyTokenState(token)
     if (token) {
       localStorage.setItem('cf_my_token', JSON.stringify(token))
     } else {
       localStorage.removeItem('cf_my_token')
     }
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({
+      location,
+      setLocation,
+      nearbyClinics,
+      setNearbyClinics,
+      myToken,
+      setMyToken,
+    }),
+    [location, setLocation, nearbyClinics, setNearbyClinics, myToken, setMyToken]
+  )
 
   return (
-    <PatientContext.Provider value={{
-      location, setLocation,
-      nearbyClinics, setNearbyClinics,
-      myToken, setMyToken,
-    }}>
+    <PatientContext.Provider value={value}>
       {children}
     </PatientContext.Provider>
   )

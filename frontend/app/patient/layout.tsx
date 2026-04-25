@@ -16,7 +16,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
       <PatientProvider>
         <div className="min-h-screen flex flex-col bg-surface-50">
           <NavWrapper />
-          <main className="flex-1">
+          <main className="flex-1 pb-20 md:pb-0">
             {children}
           </main>
         </div>

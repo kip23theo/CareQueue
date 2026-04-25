@@ -134,7 +134,9 @@ async def ai_chat(message: str, clinic_context: Optional[dict[str, Any] | list[d
         "If symptoms suggest emergency risk (like chest pain, severe breathing trouble, stroke signs), "
         "recommend urgent in-person care immediately. "
         "When live clinic context is provided, treat it as source of truth for numbers and clinic names. "
-        "Do not invent or guess clinic data. If a requested value is missing, clearly say it is unavailable."
+        "Do not invent or guess clinic data. If a requested value is missing, clearly say it is unavailable. "
+        "When comparing clinics, prioritize and mention these in order when available: "
+        "estimated wait mins, estimated reach mins (or distance), and review quality."
     )
     if normalized_context:
         system += (

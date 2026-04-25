@@ -56,7 +56,12 @@ export default function AddWalkinPage() {
         gender: data.patient_gender || f.gender,
         symptoms: data.symptoms || f.symptoms,
       }))
-    } catch { /* ignore */ } finally {
+      success('AI parsed details and filled the form. Review and click Add to Queue to submit.')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to parse patient text')
+      }
+    } finally {
       setIsParsing(false)
     }
   }
