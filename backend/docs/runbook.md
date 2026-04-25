@@ -168,9 +168,14 @@ python scripts/seed_data.py
 Demo logins after seeding:
 
 ```text
-admin@demo.carequeue.local / password123
-doctor@demo.carequeue.local / password123
-receptionist@demo.carequeue.local / password123
+superadmin@gmail.com / password123 -> /super-admin
+admin@gmail.com / password123 -> /admin
+doctor@gmail.com / password123 -> /doctor
+receptionist@gmail.com / password123 -> /receptionist
+admin2@gmail.com / password123 -> /admin
+doctor2@gmail.com / password123 -> /doctor
+receptionist2@gmail.com / password123 -> /receptionist
+patient@gmail.com / password123 -> /patient/dashboard
 ```
 
 Note: Seeded clinics have `verification_status: pending` by default. To test staff login, either approve the clinic via super admin endpoint or update the DB directly.

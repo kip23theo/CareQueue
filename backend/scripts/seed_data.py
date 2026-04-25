@@ -68,7 +68,24 @@ async def seed_data() -> None:
         await QueueToken.find({"patient_phone": {"$regex": r"^\+91000000"}}).delete()
         await Doctor.find({"name": {"$regex": r"^Demo Dr\."}}).delete()
         await Clinic.find({"phone": {"$regex": r"^\+91110000"}}).delete()
-        await User.find({"email": {"$regex": r"@demo\.carequeue\.local$"}}).delete()
+        demo_email_local_parts = [
+            "admin",
+            "doctor",
+            "receptionist",
+            "admin2",
+            "doctor2",
+            "receptionist2",
+            "pendingadmin",
+            "rejectedadmin",
+            "superadmin",
+            "patient",
+        ]
+        demo_emails = [
+            f"{local_part}@{domain}"
+            for local_part in demo_email_local_parts
+            for domain in ("demo.carequeue.local", "gmail.com")
+        ]
+        await User.find({"email": {"$in": demo_emails}}).delete()
 
         clinic_one = Clinic(
             name="Demo City Clinic",
@@ -147,7 +164,7 @@ async def seed_data() -> None:
             clinic_id=clinic_one.id,
             role=UserRole.ADMIN,
             name="Demo Admin",
-            email="admin@demo.carequeue.local",
+            email="admin@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -155,7 +172,7 @@ async def seed_data() -> None:
             clinic_id=clinic_one.id,
             role=UserRole.DOCTOR,
             name="Demo Doctor",
-            email="doctor@demo.carequeue.local",
+            email="doctor@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -163,7 +180,7 @@ async def seed_data() -> None:
             clinic_id=clinic_one.id,
             role=UserRole.RECEPTIONIST,
             name="Demo Receptionist",
-            email="receptionist@demo.carequeue.local",
+            email="receptionist@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -171,7 +188,7 @@ async def seed_data() -> None:
             clinic_id=clinic_two.id,
             role=UserRole.ADMIN,
             name="Demo Admin Two",
-            email="admin2@demo.carequeue.local",
+            email="admin2@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -179,7 +196,7 @@ async def seed_data() -> None:
             clinic_id=clinic_two.id,
             role=UserRole.DOCTOR,
             name="Demo Doctor Two",
-            email="doctor2@demo.carequeue.local",
+            email="doctor2@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -187,7 +204,7 @@ async def seed_data() -> None:
             clinic_id=clinic_two.id,
             role=UserRole.RECEPTIONIST,
             name="Demo Receptionist Two",
-            email="receptionist2@demo.carequeue.local",
+            email="receptionist2@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -195,7 +212,7 @@ async def seed_data() -> None:
             clinic_id=clinic_pending.id,
             role=UserRole.ADMIN,
             name="Demo Pending Admin",
-            email="pendingadmin@demo.carequeue.local",
+            email="pendingadmin@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -203,7 +220,7 @@ async def seed_data() -> None:
             clinic_id=clinic_rejected.id,
             role=UserRole.ADMIN,
             name="Demo Rejected Admin",
-            email="rejectedadmin@demo.carequeue.local",
+            email="rejectedadmin@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -211,7 +228,7 @@ async def seed_data() -> None:
             clinic_id=None,
             role=UserRole.SUPER_ADMIN,
             name="Demo Super Admin",
-            email="superadmin@demo.carequeue.local",
+            email="superadmin@gmail.com",
             password_hash=demo_password_hash,
             is_active=True,
         )
@@ -219,7 +236,7 @@ async def seed_data() -> None:
             clinic_id=None,
             role=UserRole.PATIENT,
             name="Demo Patient",
-            email="patient@demo.carequeue.local",
+            email="patient@gmail.com",
             phone="+919900001111",
             password_hash=demo_password_hash,
             is_active=True,
@@ -481,16 +498,16 @@ async def seed_data() -> None:
                 f"(#{qt.token_number} {qt.status.value} pos={qt.position})"
             )
         print("\nDemo logins (password for all: password123)")
-        print("  ✅ superadmin@demo.carequeue.local      -> Super Admin panel")
-        print("  ✅ admin@demo.carequeue.local           -> Clinic 1 Admin panel")
-        print("  ✅ doctor@demo.carequeue.local          -> Clinic 1 Doctor panel")
-        print("  ✅ receptionist@demo.carequeue.local    -> Clinic 1 Reception panel")
-        print("  ✅ admin2@demo.carequeue.local          -> Clinic 2 Admin panel")
-        print("  ✅ doctor2@demo.carequeue.local         -> Clinic 2 Doctor panel")
-        print("  ✅ receptionist2@demo.carequeue.local   -> Clinic 2 Reception panel")
-        print("  ✅ patient@demo.carequeue.local         -> Patient dashboard")
-        print("  ⛔ pendingadmin@demo.carequeue.local    -> Login blocked (pending verification)")
-        print("  ⛔ rejectedadmin@demo.carequeue.local   -> Login blocked (rejected verification)")
+        print("  ✅ superadmin@gmail.com      -> Super Admin panel (/super-admin)")
+        print("  ✅ admin@gmail.com           -> Clinic 1 Admin panel (/admin)")
+        print("  ✅ doctor@gmail.com          -> Clinic 1 Doctor panel (/doctor)")
+        print("  ✅ receptionist@gmail.com    -> Clinic 1 Reception panel (/receptionist)")
+        print("  ✅ admin2@gmail.com          -> Clinic 2 Admin panel (/admin)")
+        print("  ✅ doctor2@gmail.com         -> Clinic 2 Doctor panel (/doctor)")
+        print("  ✅ receptionist2@gmail.com   -> Clinic 2 Reception panel (/receptionist)")
+        print("  ✅ patient@gmail.com         -> Patient dashboard (/patient/dashboard)")
+        print("  ⛔ pendingadmin@gmail.com    -> Login blocked (pending verification)")
+        print("  ⛔ rejectedadmin@gmail.com   -> Login blocked (rejected verification)")
     finally:
         client.close()
 
