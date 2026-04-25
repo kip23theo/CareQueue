@@ -43,5 +43,5 @@ class TokenStatusResponse(BaseModel):
 
 class CancelTokenResponse(BaseModel):
     token_id: str = Field(examples=["69ec6f6ac3c51735cea88be0"])
-    status: QueueStatus = Field(examples=[QueueStatus.CANCELLED])
+    message: str = Field(examples=["Token cancelled and removed"])
     updated_at: datetime

@@ -65,6 +65,25 @@ export interface RegisterClinicResponse {
   verification_status: 'pending' | 'approved' | 'rejected'
 }
 
+export interface RegisterStaffRequest {
+  clinic_id: string
+  name: string
+  email: string
+  password: string
+  role: 'doctor' | 'receptionist'
+  doctor_image?: string
+  specialization?: string
+  avg_consult_mins?: number
+}
+
+export interface RegisterStaffResponse {
+  id: string
+  clinic_id: string
+  name: string
+  email: string
+  role: 'doctor' | 'receptionist'
+}
+
 // ── Clinic ──────────────────────────────────────────────
 export interface GeoLocation {
   type: 'Point'

@@ -3,22 +3,13 @@
 import { useRouter } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
-  Activity,
   ArrowRight,
-  BellRing,
-  Building2,
-  CalendarClock,
   CheckCircle2,
   Clock3,
-  HeartPulse,
-  MapPin,
   Navigation,
   ShieldCheck,
   Sparkles,
   Star,
-  Stethoscope,
-  TimerReset,
-  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +20,6 @@ import { getUser } from '@/lib/auth'
 type Metric = {
   label: string
   value: string
-  hint: string
 }
 
 type FeaturePillar = {
@@ -44,15 +34,12 @@ type JourneyStep = {
   step: string
   title: string
   desc: string
-  icon: LucideIcon
 }
 
-type VisitTrack = {
-  title: string
+type LiveClinic = {
+  clinic: string
   wait: string
-  desc: string
-  icon: LucideIcon
-  badge: string
+  flow: string
 }
 
 type Voice = {
@@ -63,24 +50,16 @@ type Voice = {
 
 const trustMetrics: Metric[] = [
   {
-    label: 'Queue refresh interval',
+    label: 'Queue refresh',
     value: '< 30s',
-    hint: 'Always up to date',
   },
   {
-    label: 'Clinics connected',
+    label: 'Connected clinics',
     value: '450+',
-    hint: 'Across major areas',
   },
   {
-    label: 'Patients served daily',
+    label: 'Patients/day',
     value: '12K+',
-    hint: 'High-volume reliability',
-  },
-  {
-    label: 'Average arrival accuracy',
-    value: '94%',
-    hint: 'Less waiting room time',
   },
 ]
 
@@ -111,72 +90,36 @@ const experiencePillars: FeaturePillar[] = [
 const careJourney: JourneyStep[] = [
   {
     step: '01',
-    title: 'Find the right clinic',
-    desc: 'Filter by distance, wait time, and specialty, then pick what matches your need.',
-    icon: MapPin,
+    title: 'Pick your clinic',
+    desc: 'Compare nearby options by specialty, travel time, and live queue pressure.',
   },
   {
     step: '02',
-    title: 'Join queue instantly',
-    desc: 'Share details once and receive your token immediately in the app.',
-    icon: Activity,
+    title: 'Join digitally',
+    desc: 'Get your token in seconds and skip standing in physical lines.',
   },
   {
     step: '03',
-    title: 'Track your position',
-    desc: 'Get live movement alerts so you arrive just in time, not too early.',
-    icon: BellRing,
-  },
-  {
-    step: '04',
-    title: 'Walk in with confidence',
-    desc: 'Know your likely consult window before you even leave home.',
-    icon: TimerReset,
+    title: 'Arrive at the right minute',
+    desc: 'Live updates keep you synced so you reach just before your call.',
   },
 ]
 
-const visitTracks: VisitTrack[] = [
+const liveClinics: LiveClinic[] = [
   {
-    title: 'General Physician',
-    wait: '8-18 min',
-    desc: 'Everyday fever, cold, headache, and routine concerns.',
-    icon: HeartPulse,
-    badge: 'Most booked',
+    clinic: 'GreenLife Clinic',
+    wait: '11 min',
+    flow: 'Steady flow',
   },
   {
-    title: 'Pediatrics',
-    wait: '10-20 min',
-    desc: 'Child checkups, vaccinations, and quick symptom reviews.',
-    icon: Users,
-    badge: 'Family care',
+    clinic: 'CityCare Multispecialty',
+    wait: '17 min',
+    flow: 'Slightly busy',
   },
   {
-    title: 'Dermatology',
-    wait: '12-24 min',
-    desc: 'Skin infections, allergy flare-ups, and treatment follow-ups.',
-    icon: Sparkles,
-    badge: 'Specialist',
-  },
-  {
-    title: 'Dental',
-    wait: '9-16 min',
-    desc: 'Tooth pain, cleaning, and emergency dental assessments.',
-    icon: Stethoscope,
-    badge: 'Same-day slots',
-  },
-  {
-    title: 'Cardiac Review',
-    wait: '14-28 min',
-    desc: 'Follow-up consultations and medication adjustment visits.',
-    icon: CalendarClock,
-    badge: 'Follow-up',
-  },
-  {
-    title: 'Diabetes Care',
-    wait: '11-21 min',
-    desc: 'Sugar-level monitoring and long-term care plan check-ins.',
-    icon: Building2,
-    badge: 'Chronic care',
+    clinic: 'Sunrise Family Practice',
+    wait: '8 min',
+    flow: 'Fast movement',
   },
 ]
 
@@ -191,11 +134,6 @@ const patientVoices: Voice[] = [
     name: 'Ravi M.',
     detail: 'Consultant, Bengaluru',
   },
-  {
-    quote: 'Reception calls dropped and patients arrive calmer because everyone sees the same status.',
-    name: 'Dr. Kiran S.',
-    detail: 'Clinic Lead',
-  },
 ]
 
 export default function PatientHome() {
@@ -204,26 +142,26 @@ export default function PatientHome() {
   const isPatient = user?.role === 'patient'
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_12%_8%,rgba(20,184,166,0.18),transparent_26%),radial-gradient(circle_at_84%_18%,rgba(56,189,248,0.18),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f7fffd_52%,#ffffff_100%)]">
+    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_12%_8%,rgba(20,184,166,0.16),transparent_28%),radial-gradient(circle_at_84%_20%,rgba(56,189,248,0.16),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f5fdfb_52%,#ffffff_100%)]">
       <section className="relative overflow-hidden border-b border-surface-200/70">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-brand-100/55 to-transparent" />
-        <div className="pointer-events-none absolute -right-28 top-12 h-64 w-64 rounded-full bg-brand-300/35 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 bottom-2 h-64 w-64 rounded-full bg-cyan-200/35 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-brand-100/50 to-transparent" />
+        <div className="pointer-events-none absolute -right-24 top-16 h-56 w-56 rounded-full bg-brand-300/30 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 bottom-6 h-56 w-56 rounded-full bg-cyan-200/30 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:px-8 lg:pt-16">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:pb-16 lg:pt-16">
           <div>
             <Badge className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
               <Sparkles size={13} />
-              Real-time Patient Queue Platform
+              Smart Queue for Patients
             </Badge>
 
-            <h1 className="font-heading text-4xl font-bold leading-tight text-surface-900 sm:text-5xl lg:text-[3.35rem] lg:leading-[1.05]">
-              Reach the clinic at the
-              <span className="block text-brand-700">right minute, not an hour early</span>
+            <h1 className="font-heading text-4xl font-bold leading-tight text-surface-900 sm:text-5xl lg:text-[3.2rem] lg:leading-[1.06]">
+              Reach your clinic at the
+              <span className="block text-brand-700">right minute</span>
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-600 sm:text-lg">
-              CareQueue helps you discover nearby clinics, compare live wait times, and join digitally so your visit feels predictable from start to finish.
+              CareQueue helps you find nearby clinics and doctors, join the line digitally, and arrive just before your turn.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -231,7 +169,7 @@ export default function PatientHome() {
                 onClick={() => router.push('/patient/clinics')}
                 className="h-11 rounded-xl bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600"
               >
-                Explore clinics
+                Search / Explore
                 <ArrowRight size={16} />
               </Button>
 
@@ -248,21 +186,29 @@ export default function PatientHome() {
 
             <div className="mt-6 flex items-center gap-2 text-sm text-surface-600">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              Location is requested only when you open clinic discovery.
+              Location is only requested when you open search and explore.
+            </div>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              {trustMetrics.map((item) => (
+                <Card
+                  key={item.label}
+                  className="rounded-2xl border border-surface-200/90 bg-white/85 px-4 py-3"
+                >
+                  <p className="text-xs uppercase tracking-[0.08em] text-surface-500">{item.label}</p>
+                  <p className="mt-1 text-xl font-bold text-surface-900">{item.value}</p>
+                </Card>
+              ))}
             </div>
           </div>
 
           <Card className="rounded-[1.75rem] border border-brand-100/80 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(20,184,166,0.45)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Live pulse snapshot</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Live Snapshot</p>
             <h2 className="mt-2 text-2xl font-bold text-surface-900">Today around you</h2>
-            <p className="mt-1 text-sm text-surface-600">Queue dynamics from connected clinics in your city region.</p>
+            <p className="mt-1 text-sm text-surface-600">Quick glance at real queue movement in your area.</p>
 
             <div className="mt-6 space-y-3">
-              {[
-                { clinic: 'GreenLife Clinic', wait: '11 min', flow: 'Steady flow' },
-                { clinic: 'CityCare Multispecialty', wait: '17 min', flow: 'Slightly busy' },
-                { clinic: 'Sunrise Family Practice', wait: '8 min', flow: 'Fast movement' },
-              ].map((item) => (
+              {liveClinics.map((item) => (
                 <div
                   key={item.clinic}
                   className="flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50/80 px-4 py-3"
@@ -285,123 +231,72 @@ export default function PatientHome() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {trustMetrics.map((item) => (
-            <Card key={item.label} className="rounded-2xl border-surface-200/90 bg-white/85 p-5">
-              <p className="text-xs uppercase tracking-[0.07em] text-surface-500">{item.label}</p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-surface-900">{item.value}</p>
-              <p className="mt-1 text-sm text-surface-600">{item.hint}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Core Experience</p>
-          <h2 className="mt-1 font-heading text-3xl font-bold tracking-tight text-surface-900">
-            Built to reduce uncertainty before every clinic visit
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-6 lg:px-8">
+        <Card className="rounded-[1.5rem] border border-surface-200 bg-white/90 p-6 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">How It Works</p>
+          <h2 className="mt-2 text-2xl font-bold text-surface-900 md:text-[1.75rem]">
+            A simple 3-step flow
           </h2>
-        </div>
+          <p className="mt-2 text-sm leading-relaxed text-surface-600">
+            Minimal taps, less waiting room time, and better predictability for your day.
+          </p>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {experiencePillars.map((pillar) => {
-            const Icon = pillar.icon
-            return (
-              <Card key={pillar.title} className={cn('rounded-3xl border p-6', pillar.tone)}>
-                <span
-                  className={cn(
-                    'mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-sm',
-                    pillar.iconTone
-                  )}
-                >
-                  <Icon size={18} />
-                </span>
-                <h3 className="text-lg font-bold text-surface-900">{pillar.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-surface-600">{pillar.desc}</p>
-              </Card>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden rounded-[1.75rem] border border-surface-200 bg-white/90 p-6 md:p-8">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">How It Works</p>
-              <h2 className="mt-1 text-2xl font-bold text-surface-900 md:text-3xl">A 4-step queue journey</h2>
-            </div>
-            <p className="max-w-md text-sm text-surface-600">
-              Everything is designed so you spend less time in waiting rooms and more time on your day.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {careJourney.map((item) => {
-              const Icon = item.icon
-              return (
-                <div
-                  key={item.step}
-                  className="rounded-2xl border border-surface-200 bg-surface-50/80 p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700">
-                      Step {item.step}
-                    </span>
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-brand-700 shadow-sm">
-                      <Icon size={16} />
-                    </span>
-                  </div>
-                  <p className="text-sm font-semibold text-surface-900">{item.title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-surface-600">{item.desc}</p>
+          <div className="mt-6 space-y-3">
+            {careJourney.map((item) => (
+              <div key={item.step} className="rounded-2xl border border-surface-200 bg-surface-50/75 p-4">
+                <div className="mb-2 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700">
+                  Step {item.step}
                 </div>
+                <p className="text-sm font-semibold text-surface-900">{item.title}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-surface-600">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="mt-6 rounded-[1.5rem] border border-surface-200 bg-white/90 p-6 md:p-7 lg:mt-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Core Experience</p>
+          <h2 className="mt-2 text-2xl font-bold text-surface-900 md:text-[1.75rem]">
+            Designed to feel calm and clear
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-surface-600">
+            The app keeps you informed without overwhelming you with noise.
+          </p>
+
+          <div className="mt-6 space-y-3">
+            {experiencePillars.map((pillar) => {
+              const Icon = pillar.icon
+              return (
+                <Card key={pillar.title} className={cn('rounded-2xl border p-4', pillar.tone)}>
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm',
+                        pillar.iconTone
+                      )}
+                    >
+                      <Icon size={17} />
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-semibold text-surface-900">{pillar.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-surface-600">{pillar.desc}</p>
+                    </div>
+                  </div>
+                </Card>
               )
             })}
           </div>
         </Card>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Visit Tracks</p>
-          <h2 className="mt-1 font-heading text-3xl font-bold tracking-tight text-surface-900">
-            Choose the care lane that matches your visit
-          </h2>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {visitTracks.map((track) => {
-            const Icon = track.icon
-            return (
-              <Card key={track.title} className="rounded-2xl border border-surface-200 bg-white p-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
-                    <Icon size={17} />
-                  </div>
-                  <span className="rounded-full border border-surface-200 bg-surface-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-surface-600">
-                    {track.badge}
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-surface-900">{track.title}</h3>
-                <p className="mt-1 text-sm text-surface-600">{track.desc}</p>
-                <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                  <Clock3 size={13} />
-                  Typical wait {track.wait}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      </section>
-
       <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 lg:px-8">
         <Card className="rounded-[1.75rem] border border-brand-200 bg-gradient-to-br from-white via-brand-50/50 to-cyan-50/70 p-6 md:p-8">
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Patient Voices</p>
-              <h2 className="mt-1 text-3xl font-bold tracking-tight text-surface-900">Trusted by busy families and clinics</h2>
+              <h2 className="mt-1 text-3xl font-bold tracking-tight text-surface-900">
+                Trusted by busy families
+              </h2>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {patientVoices.map((item) => (
@@ -413,7 +308,7 @@ export default function PatientHome() {
                       <Star size={14} fill="currentColor" />
                       <Star size={14} fill="currentColor" />
                     </div>
-                    <p className="text-sm leading-relaxed text-surface-700">“{item.quote}”</p>
+                    <p className="text-sm leading-relaxed text-surface-700">&ldquo;{item.quote}&rdquo;</p>
                     <p className="mt-3 text-xs font-semibold uppercase tracking-[0.06em] text-surface-500">
                       {item.name} · {item.detail}
                     </p>
@@ -422,12 +317,12 @@ export default function PatientHome() {
               </div>
             </div>
 
-            <div className="flex h-full flex-col justify-between rounded-3xl border border-brand-200 bg-white/80 p-5 md:p-6">
+            <div className="flex h-full flex-col justify-between rounded-3xl border border-brand-200 bg-white/85 p-5 md:p-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Start Now</p>
-                <h3 className="mt-1 text-2xl font-bold text-surface-900">Find your best clinic in under a minute</h3>
+                <h3 className="mt-1 text-2xl font-bold text-surface-900">Pick your clinic in under a minute</h3>
                 <p className="mt-2 text-sm leading-relaxed text-surface-600">
-                  Compare wait times, pick your doctor, and join from your phone without standing in line.
+                  Compare wait times, choose your doctor, and join instantly.
                 </p>
               </div>
 
@@ -436,7 +331,7 @@ export default function PatientHome() {
                   onClick={() => router.push('/patient/clinics')}
                   className="h-11 w-full rounded-xl bg-brand-500 text-sm font-semibold text-white hover:bg-brand-600"
                 >
-                  Explore clinics near me
+                  Search / Explore near me
                   <ArrowRight size={16} />
                 </Button>
 

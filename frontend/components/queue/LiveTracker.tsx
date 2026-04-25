@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn, formatTime, formatTokenDisplay } from '@/lib/utils'
 import type { QueueToken, TokenStatus } from '@/types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -10,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { connectSSE } from '@/lib/sse'
 import { tokensApi } from '@/lib/api-calls'
+import { usePatient } from '@/context/PatientContext'
 import { Check, Circle, Loader2 } from 'lucide-react'
 
 interface Props {
@@ -56,6 +58,8 @@ function buildTimeline(token: QueueToken): TimelineStep[] {
 }
 
 export function LiveTracker({ token: initialToken, clinicName }: Props) {
+  const router = useRouter()
+  const { setMyToken } = usePatient()
   const [token, setToken] = useState(initialToken)
   const [eta, setEta] = useState(initialToken.est_wait_mins)
   const [isCalled, setIsCalled] = useState(initialToken.status === 'CALLED')
@@ -224,7 +228,8 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
             onClick={async () => {
               if (confirm('Cancel your token?')) {
                 await tokensApi.cancel(token._id)
-                fetchStatus()
+                setMyToken(null)
+                router.push(`/patient/clinic/${token.clinic_id}`)
               }
             }}
             variant="outline"

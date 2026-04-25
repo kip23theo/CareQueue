@@ -1,32 +1,218 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getUser } from '@/lib/auth'
-import { doctorsApi } from '@/lib/api-calls'
+import { authApi, doctorsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import type { Doctor } from '@/types'
 import axios from 'axios'
-import { Stethoscope, CheckCircle2, Clock, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
+import {
+  CheckCircle2,
+  ClipboardCopy,
+  Clock,
+  Loader2,
+  MailPlus,
+  Stethoscope,
+  ToggleLeft,
+  ToggleRight,
+  UserPlus2,
+} from 'lucide-react'
+
+type AddDoctorFormState = {
+  name: string
+  email: string
+  password: string
+  specialization: string
+  avg_consult_mins: number
+  doctor_image: string
+}
+
+type InviteDoctorFormState = {
+  name: string
+  email: string
+  specialization: string
+  avg_consult_mins: number
+  doctor_image: string
+}
+
+type InviteCredentials = {
+  name: string
+  email: string
+  password: string
+  loginUrl: string
+}
+
+const INITIAL_ADD_FORM: AddDoctorFormState = {
+  name: '',
+  email: '',
+  password: '',
+  specialization: 'General Physician',
+  avg_consult_mins: 10,
+  doctor_image: '',
+}
+
+const INITIAL_INVITE_FORM: InviteDoctorFormState = {
+  name: '',
+  email: '',
+  specialization: 'General Physician',
+  avg_consult_mins: 10,
+  doctor_image: '',
+}
+
+function buildTemporaryPassword(length = 12): string {
+  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*'
+  if (typeof window === 'undefined' || !window.crypto?.getRandomValues) {
+    return Array.from({ length }, () => charset[Math.floor(Math.random() * charset.length)]).join('')
+  }
+
+  const values = new Uint32Array(length)
+  window.crypto.getRandomValues(values)
+  return Array.from(values, (value) => charset[value % charset.length]).join('')
+}
 
 export default function AdminDoctorsPage() {
   const user = getUser()
   const { success, error: toastError } = useToast()
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isAddingDoctor, setIsAddingDoctor] = useState(false)
+  const [isInvitingDoctor, setIsInvitingDoctor] = useState(false)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [delayEditing, setDelayEditing] = useState<Record<string, number>>({})
+  const [addDoctorForm, setAddDoctorForm] = useState<AddDoctorFormState>(INITIAL_ADD_FORM)
+  const [inviteDoctorForm, setInviteDoctorForm] = useState<InviteDoctorFormState>(INITIAL_INVITE_FORM)
+  const [inviteCredentials, setInviteCredentials] = useState<InviteCredentials | null>(null)
+
+  const inviteMessage = useMemo(() => {
+    if (!inviteCredentials) return ''
+    return [
+      `Hi Dr. ${inviteCredentials.name},`,
+      'You have been invited to join CareQueue.',
+      `Login URL: ${inviteCredentials.loginUrl}`,
+      `Email: ${inviteCredentials.email}`,
+      `Temporary password: ${inviteCredentials.password}`,
+      'Please sign in and change your password after first login.',
+    ].join('\n')
+  }, [inviteCredentials])
 
   useEffect(() => {
     if (!user?.clinic_id) return
     doctorsApi.getAll(user.clinic_id)
       .then(({ data }) => setDoctors(data))
-      .catch(() => {})
+      .catch(() => setDoctors([]))
       .finally(() => setIsLoading(false))
   }, [user?.clinic_id])
+
+  const refreshDoctors = async () => {
+    if (!user?.clinic_id) return
+    const { data } = await doctorsApi.getAll(user.clinic_id)
+    setDoctors(data)
+  }
+
+  const handleAddDoctor = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!user?.clinic_id) {
+      toastError('Clinic account not found')
+      return
+    }
+
+    const trimmedName = addDoctorForm.name.trim()
+    const trimmedEmail = addDoctorForm.email.trim()
+    const trimmedSpecialization = addDoctorForm.specialization.trim()
+    const trimmedImage = addDoctorForm.doctor_image.trim()
+    if (!trimmedName || !trimmedEmail || !addDoctorForm.password.trim()) {
+      toastError('Name, email, and password are required')
+      return
+    }
+
+    setIsAddingDoctor(true)
+    try {
+      await authApi.registerStaff({
+        clinic_id: user.clinic_id,
+        name: trimmedName,
+        email: trimmedEmail,
+        password: addDoctorForm.password.trim(),
+        role: 'doctor',
+        specialization: trimmedSpecialization || 'General Physician',
+        avg_consult_mins: addDoctorForm.avg_consult_mins,
+        doctor_image: trimmedImage || undefined,
+      })
+      setAddDoctorForm(INITIAL_ADD_FORM)
+      success(`Doctor account created for ${trimmedName}`)
+      await refreshDoctors().catch(() => {})
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to add doctor')
+      }
+    } finally {
+      setIsAddingDoctor(false)
+    }
+  }
+
+  const handleInviteDoctor = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!user?.clinic_id) {
+      toastError('Clinic account not found')
+      return
+    }
+
+    const trimmedName = inviteDoctorForm.name.trim()
+    const trimmedEmail = inviteDoctorForm.email.trim()
+    const trimmedSpecialization = inviteDoctorForm.specialization.trim()
+    const trimmedImage = inviteDoctorForm.doctor_image.trim()
+    if (!trimmedName || !trimmedEmail) {
+      toastError('Name and email are required')
+      return
+    }
+
+    const temporaryPassword = buildTemporaryPassword()
+
+    setIsInvitingDoctor(true)
+    try {
+      await authApi.registerStaff({
+        clinic_id: user.clinic_id,
+        name: trimmedName,
+        email: trimmedEmail,
+        password: temporaryPassword,
+        role: 'doctor',
+        specialization: trimmedSpecialization || 'General Physician',
+        avg_consult_mins: inviteDoctorForm.avg_consult_mins,
+        doctor_image: trimmedImage || undefined,
+      })
+
+      const loginUrl = typeof window === 'undefined' ? '/auth/login' : `${window.location.origin}/auth/login`
+      setInviteCredentials({
+        name: trimmedName,
+        email: trimmedEmail,
+        password: temporaryPassword,
+        loginUrl,
+      })
+      setInviteDoctorForm(INITIAL_INVITE_FORM)
+      success(`Invite prepared for ${trimmedName}`)
+      await refreshDoctors().catch(() => {})
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toastError(err.response?.data?.detail ?? 'Unable to invite doctor')
+      }
+    } finally {
+      setIsInvitingDoctor(false)
+    }
+  }
+
+  const handleCopyInviteMessage = async () => {
+    if (!inviteCredentials || !inviteMessage) return
+    try {
+      await navigator.clipboard.writeText(inviteMessage)
+      success('Invite message copied')
+    } catch {
+      toastError('Could not copy invite message')
+    }
+  }
 
   const handleToggleAvailability = async (doc: Doctor) => {
     setUpdatingId(doc._id)
@@ -60,15 +246,196 @@ export default function AdminDoctorsPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold font-heading text-surface-900">Doctors</h1>
-        <p className="text-surface-500 text-sm mt-0.5">Manage availability and delays</p>
+        <p className="text-surface-500 text-sm mt-0.5">Add, invite, and manage doctor availability</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 mb-6">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <UserPlus2 size={16} className="text-brand-500" />
+            <h2 className="font-semibold font-heading text-surface-900">Add Doctor</h2>
+          </div>
+          <form className="space-y-3" onSubmit={handleAddDoctor}>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Name</Label>
+              <Input
+                required
+                value={addDoctorForm.name}
+                onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Dr. Sarah John"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Email</Label>
+              <Input
+                required
+                type="email"
+                value={addDoctorForm.email}
+                onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="sarah@clinic.com"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Password</Label>
+              <Input
+                required
+                minLength={6}
+                type="password"
+                value={addDoctorForm.password}
+                onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, password: e.target.value }))}
+                placeholder="Minimum 6 characters"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1.5 block text-xs font-medium text-surface-600">Specialization</Label>
+                <Input
+                  value={addDoctorForm.specialization}
+                  onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, specialization: e.target.value }))}
+                  placeholder="General Physician"
+                  className="h-10 rounded-xl border-surface-200"
+                />
+              </div>
+              <div>
+                <Label className="mb-1.5 block text-xs font-medium text-surface-600">Avg consult (min)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={addDoctorForm.avg_consult_mins}
+                  onChange={(e) => {
+                    const value = Number(e.target.value)
+                    setAddDoctorForm((prev) => ({
+                      ...prev,
+                      avg_consult_mins: Number.isFinite(value) && value > 0 ? value : 10,
+                    }))
+                  }}
+                  className="h-10 rounded-xl border-surface-200"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Image URL (optional)</Label>
+              <Input
+                value={addDoctorForm.doctor_image}
+                onChange={(e) => setAddDoctorForm((prev) => ({ ...prev, doctor_image: e.target.value }))}
+                placeholder="https://example.com/doctor.jpg"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isAddingDoctor}
+              className="w-full h-10 rounded-xl bg-brand-500 text-white hover:bg-brand-600"
+            >
+              {isAddingDoctor ? <Loader2 size={14} className="animate-spin" /> : <UserPlus2 size={14} />}
+              Create doctor account
+            </Button>
+          </form>
+        </Card>
+
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <MailPlus size={16} className="text-brand-500" />
+            <h2 className="font-semibold font-heading text-surface-900">Invite Doctor</h2>
+          </div>
+          <form className="space-y-3" onSubmit={handleInviteDoctor}>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Name</Label>
+              <Input
+                required
+                value={inviteDoctorForm.name}
+                onChange={(e) => setInviteDoctorForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Dr. Alex Rao"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Email</Label>
+              <Input
+                required
+                type="email"
+                value={inviteDoctorForm.email}
+                onChange={(e) => setInviteDoctorForm((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="alex@clinic.com"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="mb-1.5 block text-xs font-medium text-surface-600">Specialization</Label>
+                <Input
+                  value={inviteDoctorForm.specialization}
+                  onChange={(e) => setInviteDoctorForm((prev) => ({ ...prev, specialization: e.target.value }))}
+                  placeholder="General Physician"
+                  className="h-10 rounded-xl border-surface-200"
+                />
+              </div>
+              <div>
+                <Label className="mb-1.5 block text-xs font-medium text-surface-600">Avg consult (min)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={inviteDoctorForm.avg_consult_mins}
+                  onChange={(e) => {
+                    const value = Number(e.target.value)
+                    setInviteDoctorForm((prev) => ({
+                      ...prev,
+                      avg_consult_mins: Number.isFinite(value) && value > 0 ? value : 10,
+                    }))
+                  }}
+                  className="h-10 rounded-xl border-surface-200"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="mb-1.5 block text-xs font-medium text-surface-600">Image URL (optional)</Label>
+              <Input
+                value={inviteDoctorForm.doctor_image}
+                onChange={(e) => setInviteDoctorForm((prev) => ({ ...prev, doctor_image: e.target.value }))}
+                placeholder="https://example.com/doctor.jpg"
+                className="h-10 rounded-xl border-surface-200"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isInvitingDoctor}
+              className="w-full h-10 rounded-xl bg-surface-900 text-white hover:bg-surface-700"
+            >
+              {isInvitingDoctor ? <Loader2 size={14} className="animate-spin" /> : <MailPlus size={14} />}
+              Generate invite credentials
+            </Button>
+          </form>
+          {inviteCredentials && (
+            <div className="mt-4 rounded-xl border border-surface-200 bg-surface-50 p-3">
+              <p className="text-xs font-semibold text-surface-700">Latest invite</p>
+              <p className="text-xs text-surface-600 mt-1 break-words">{inviteCredentials.email}</p>
+              <p className="text-xs text-surface-600 break-words">Temp password: {inviteCredentials.password}</p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-2 rounded-lg bg-white border border-surface-200"
+                onClick={handleCopyInviteMessage}
+              >
+                <ClipboardCopy size={13} />
+                Copy invite message
+              </Button>
+            </div>
+          )}
+        </Card>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
-          {[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-2xl" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="skeleton h-32 rounded-2xl" />)}
         </div>
       ) : doctors.length === 0 ? (
         <div className="text-center py-16">

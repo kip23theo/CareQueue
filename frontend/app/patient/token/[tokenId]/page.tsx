@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { tokensApi, clinicsApi } from '@/lib/api-calls'
+import { usePatient } from '@/context/PatientContext'
 import { LiveTracker } from '@/components/queue/LiveTracker'
 import type { QueueToken, Clinic } from '@/types'
 import { Loader2 } from 'lucide-react'
+import axios from 'axios'
 
 export default function TokenTrackerPage() {
   const { tokenId } = useParams<{ tokenId: string }>()
+  const { myToken, setMyToken } = usePatient()
   const [token, setToken] = useState<QueueToken | null>(null)
   const [clinic, setClinic] = useState<Clinic | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -20,14 +23,20 @@ export default function TokenTrackerPage() {
         setToken(t)
         const { data: c } = await clinicsApi.getById(t.clinic_id)
         setClinic(c)
-      } catch {
-        // handle error
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          error.response?.status === 404 &&
+          myToken?._id === tokenId
+        ) {
+          setMyToken(null)
+        }
       } finally {
         setIsLoading(false)
       }
     }
     load()
-  }, [tokenId])
+  }, [myToken?._id, setMyToken, tokenId])
 
   if (isLoading) {
     return (

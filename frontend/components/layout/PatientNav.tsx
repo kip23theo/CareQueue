@@ -22,9 +22,10 @@ const quickLinks = [
   },
   {
     href: '/patient/clinics',
-    label: 'Clinics',
+    label: 'Explore',
     icon: Compass,
-    match: (path: string) => path === '/patient/clinics' || path.startsWith('/patient/clinic/'),
+    match: (path: string) =>
+      path === '/patient/clinics' || path.startsWith('/patient/clinic/') || path.startsWith('/patient/doctor/'),
   },
 ]
 
@@ -38,9 +39,10 @@ const mobileLinks = [
   },
   {
     href: '/patient/clinics',
-    label: 'Clinic',
+    label: 'Explore',
     icon: Compass,
-    match: (path: string) => path === '/patient/clinics' || path.startsWith('/patient/clinic/'),
+    match: (path: string) =>
+      path === '/patient/clinics' || path.startsWith('/patient/clinic/') || path.startsWith('/patient/doctor/'),
   },
   {
     href: '/patient/dashboard',

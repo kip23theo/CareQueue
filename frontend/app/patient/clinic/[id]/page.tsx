@@ -15,9 +15,51 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import type { Clinic, Doctor } from '@/types'
+import type { Clinic, Doctor, QueueToken } from '@/types'
 import axios from 'axios'
 import { MapPin, Phone, Star, Clock, Users, Loader2, Stethoscope, Navigation } from 'lucide-react'
+
+const ACTIVE_TRACKABLE_STATUSES: Set<QueueToken['status']> = new Set([
+  'WAITING',
+  'CALLED',
+  'IN_CONSULTATION',
+  'EMERGENCY',
+])
+
+const BOOKING_PROFILE_KEY = 'cf_patient_booking_profile'
+
+interface BookingProfile {
+  name: string
+  phone: string
+  age: string
+  gender: 'male' | 'female' | 'other' | ''
+}
+
+function getInitialBookingProfile(authUser: ReturnType<typeof getUser>): BookingProfile {
+  const fallbackProfile: BookingProfile = {
+    name: authUser?.name?.trim() ?? '',
+    phone: authUser?.phone?.trim() ?? '',
+    age: '',
+    gender: '',
+  }
+
+  if (typeof window === 'undefined') return fallbackProfile
+
+  const savedRaw = localStorage.getItem(BOOKING_PROFILE_KEY)
+  if (!savedRaw) return fallbackProfile
+
+  try {
+    const saved = JSON.parse(savedRaw) as Partial<BookingProfile>
+    return {
+      name: saved.name?.trim() || fallbackProfile.name,
+      phone: saved.phone?.trim() || fallbackProfile.phone,
+      age: saved.age?.trim() || '',
+      gender: saved.gender && ['male', 'female', 'other'].includes(saved.gender) ? saved.gender : '',
+    }
+  } catch {
+    return fallbackProfile
+  }
+}
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={cn('skeleton rounded-xl', className)} />
@@ -34,13 +76,17 @@ export default function ClinicDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDoctor, setSelectedDoctor] = useState<string>('')
   const [isJoining, setIsJoining] = useState(false)
+  const [initialBookingProfile] = useState(() => getInitialBookingProfile(authUser))
 
   // Form fields
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [age, setAge] = useState('')
-  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
+  const [name, setName] = useState(initialBookingProfile.name)
+  const [phone, setPhone] = useState(initialBookingProfile.phone)
+  const [age, setAge] = useState(initialBookingProfile.age)
+  const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>(initialBookingProfile.gender)
   const [symptoms, setSymptoms] = useState('')
+  const [isEditingDetails, setIsEditingDetails] = useState(
+    !(initialBookingProfile.name && initialBookingProfile.phone && initialBookingProfile.age)
+  )
 
   useEffect(() => {
     const load = async () => {
@@ -62,7 +108,11 @@ export default function ClinicDetailPage() {
     load()
   }, [id, toastError])
 
-  const existingToken = myToken?.clinic_id === id ? myToken : null
+  const existingToken =
+    myToken?.clinic_id === id && ACTIVE_TRACKABLE_STATUSES.has(myToken.status)
+      ? myToken
+      : null
+  const hasSavedDetails = Boolean(name.trim() && phone.trim() && age.trim())
 
   const handleGetDirections = () => {
     if (!clinic) return
@@ -76,20 +126,38 @@ export default function ClinicDetailPage() {
     window.open(directionsUrl, '_blank', 'noopener,noreferrer')
   }
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleBook = async () => {
     if (!selectedDoctor) { toastError('Please select a doctor'); return }
+    const cleanName = name.trim()
+    const cleanPhone = phone.trim()
+    const parsedAge = Number(age)
+    if (!cleanName || !cleanPhone || !age.trim()) {
+      toastError('Please complete your details once before booking')
+      setIsEditingDetails(true)
+      return
+    }
+    if (!Number.isFinite(parsedAge) || parsedAge <= 0 || parsedAge > 150) {
+      toastError('Please enter a valid age')
+      setIsEditingDetails(true)
+      return
+    }
+    localStorage.setItem(BOOKING_PROFILE_KEY, JSON.stringify({
+      name: cleanName,
+      phone: cleanPhone,
+      age: String(parsedAge),
+      gender,
+    } satisfies BookingProfile))
     setIsJoining(true)
     try {
       const { data } = await tokensApi.join({
         clinic_id: id,
         doctor_id: selectedDoctor,
         patient_user_id: authUser?.role === 'patient' ? authUser.id : undefined,
-        patient_name: name,
-        patient_phone: phone,
-        patient_age: Number(age),
+        patient_name: cleanName,
+        patient_phone: cleanPhone,
+        patient_age: parsedAge,
         patient_gender: gender || undefined,
-        symptoms: symptoms || undefined,
+        symptoms: symptoms.trim() || undefined,
       })
       setMyToken(data.token)
       success(`Token ${data.token.token_display} created! You're #${data.token.position} in queue.`)
@@ -101,6 +169,11 @@ export default function ClinicDetailPage() {
     } finally {
       setIsJoining(false)
     }
+  }
+
+  const handleJoin = (e: React.FormEvent) => {
+    e.preventDefault()
+    void handleBook()
   }
 
   if (isLoading) {
@@ -273,93 +346,148 @@ export default function ClinicDetailPage() {
       {/* Join form */}
       {!existingToken && clinic.is_open && (
         <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
-          <h2 className="font-semibold text-surface-900 font-heading mb-4">Join Queue</h2>
-          <form onSubmit={handleJoin} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Full Name *</Label>
-                <Input
-                  required
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Phone *</Label>
-                <Input
-                  required
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91..."
-                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
-                />
-              </div>
-              <div>
-                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Age *</Label>
-                <Input
-                  required
-                  type="number"
-                  min="0"
-                  max="150"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  placeholder="25"
-                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Gender */}
+          <div className="flex items-start justify-between gap-3 mb-4">
             <div>
-              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Gender</Label>
-              <div className="flex gap-2">
-                {(['male', 'female', 'other'] as const).map((g) => (
-                  <Button
-                    key={g}
-                    type="button"
-                    onClick={() => setGender(gender === g ? '' : g)}
-                    variant={gender === g ? 'default' : 'outline'}
-                    size="sm"
-                    className={cn(
-                      'flex-1 h-9 rounded-xl text-xs font-medium capitalize transition-all',
-                      gender === g
-                        ? 'border-brand-400 bg-brand-50 text-brand-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
-                    )}
-                  >
-                    {g}
-                  </Button>
-                ))}
+              <h2 className="font-semibold text-surface-900 font-heading">Join Queue</h2>
+              <p className="text-xs text-surface-500 mt-1">
+                {hasSavedDetails
+                  ? 'Saved details are ready. Tap Book Now.'
+                  : 'Enter your details once, then book in one tap next time.'}
+              </p>
+            </div>
+            {hasSavedDetails && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingDetails((prev) => !prev)}
+                className="h-9 rounded-xl border-surface-200 text-surface-700"
+              >
+                {isEditingDetails ? 'Hide details' : 'Edit details'}
+              </Button>
+            )}
+          </div>
+
+          {!isEditingDetails && hasSavedDetails ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-surface-200 bg-surface-50 p-3 space-y-1.5">
+                <p className="text-sm font-semibold text-surface-900">{name}</p>
+                <p className="text-xs text-surface-600">{phone}</p>
+                <p className="text-xs text-surface-600">Age {age}{gender ? ` · ${gender}` : ''}</p>
               </div>
-            </div>
 
-            <div>
-              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Symptoms (optional)</Label>
-              <Textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                placeholder="Describe your symptoms..."
-                rows={3}
-                className="rounded-xl border-surface-200 bg-surface-50 px-3 py-2.5 text-sm resize-none"
-              />
-            </div>
+              <div>
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Symptoms (optional)</Label>
+                <Textarea
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  placeholder="Describe your symptoms..."
+                  rows={3}
+                  className="rounded-xl border-surface-200 bg-surface-50 px-3 py-2.5 text-sm resize-none"
+                />
+              </div>
 
-            <Button
-              type="submit"
-              disabled={isJoining}
-              className="w-full h-12 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25"
-            >
-              {isJoining ? (
-                <><Loader2 size={18} className="animate-spin" /> Joining...</>
-              ) : (
-                'Join Queue'
-              )}
-            </Button>
-          </form>
+              <Button
+                type="button"
+                onClick={() => void handleBook()}
+                disabled={isJoining}
+                className="w-full h-12 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25"
+              >
+                {isJoining ? (
+                  <><Loader2 size={18} className="animate-spin" /> Booking...</>
+                ) : (
+                  'Book Now'
+                )}
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleJoin} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="block text-xs font-medium text-surface-600 mb-1.5">Full Name *</Label>
+                  <Input
+                    required
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="block text-xs font-medium text-surface-600 mb-1.5">Phone *</Label>
+                  <Input
+                    required
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91..."
+                    className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="block text-xs font-medium text-surface-600 mb-1.5">Age *</Label>
+                  <Input
+                    required
+                    type="number"
+                    min="1"
+                    max="150"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="25"
+                    className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Gender */}
+              <div>
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Gender</Label>
+                <div className="flex gap-2">
+                  {(['male', 'female', 'other'] as const).map((g) => (
+                    <Button
+                      key={g}
+                      type="button"
+                      onClick={() => setGender(gender === g ? '' : g)}
+                      variant={gender === g ? 'default' : 'outline'}
+                      size="sm"
+                      className={cn(
+                        'flex-1 h-9 rounded-xl text-xs font-medium capitalize transition-all',
+                        gender === g
+                          ? 'border-brand-400 bg-brand-50 text-brand-700'
+                          : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                      )}
+                    >
+                      {g}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Symptoms (optional)</Label>
+                <Textarea
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  placeholder="Describe your symptoms..."
+                  rows={3}
+                  className="rounded-xl border-surface-200 bg-surface-50 px-3 py-2.5 text-sm resize-none"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isJoining}
+                className="w-full h-12 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25"
+              >
+                {isJoining ? (
+                  <><Loader2 size={18} className="animate-spin" /> Booking...</>
+                ) : (
+                  'Save Details & Book'
+                )}
+              </Button>
+            </form>
+          )}
         </Card>
       )}
     </div>

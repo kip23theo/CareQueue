@@ -3,6 +3,7 @@ import type {
   LoginRequest, LoginResponse,
   RegisterPatientRequest, RegisterPatientResponse,
   RegisterClinicRequest, RegisterClinicResponse,
+  RegisterStaffRequest, RegisterStaffResponse,
   Clinic, NearbyClinicRequest,
   QueueToken, JoinQueueRequest, JoinQueueResponse,
   AddWalkinRequest, LiveQueue, DoctorQueue,
@@ -376,6 +377,18 @@ export const authApi = {
         message: payload.message ?? 'Clinic registered',
         clinic_id: payload.clinic_id ?? '',
         verification_status: payload.verification_status ?? 'pending',
+      }
+      return withData(res, normalized)
+    }),
+  registerStaff: (body: RegisterStaffRequest) =>
+    api.post<unknown>('/auth/register-staff', body).then((res) => {
+      const payload = (res.data ?? {}) as Partial<RegisterStaffResponse>
+      const normalized: RegisterStaffResponse = {
+        id: payload.id ?? '',
+        clinic_id: payload.clinic_id ?? body.clinic_id,
+        name: payload.name ?? body.name,
+        email: payload.email ?? body.email,
+        role: payload.role ?? body.role,
       }
       return withData(res, normalized)
     }),

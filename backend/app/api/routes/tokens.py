@@ -241,7 +241,7 @@ async def get_token_status(token_id: str) -> TokenStatusResponse:
     "/{token_id}/cancel",
     response_model=CancelTokenResponse,
     summary="Cancel token",
-    description="Cancel a WAITING or CALLED token. Reorders remaining queue positions.",
+    description="Cancel a WAITING or CALLED token by removing it. Reorders remaining queue positions.",
     responses={
         200: {"description": "Token cancelled successfully"},
         400: {"description": "Invalid token_id or token cannot be cancelled"},
@@ -271,17 +271,15 @@ async def cancel_token(token_id: str) -> CancelTokenResponse:
         )
 
     now = datetime.now(timezone.utc)
+    clinic_id = token.clinic_id
+    token_date = token.date
+    deleted_token_id = str(token.id)
 
-    token.status = QueueStatus.CANCELLED
-    token.position = 0
-    token.est_wait_mins = 0
-    token.updated_at = now
-    await token.save()
-
-    await recalculate_waiting_positions(token.clinic_id, token.date)
+    await token.delete()
+    await recalculate_waiting_positions(clinic_id, token_date)
 
     return CancelTokenResponse(
-        token_id=str(token.id),
-        status=token.status,
-        updated_at=token.updated_at,
+        token_id=deleted_token_id,
+        message="Token cancelled and removed",
+        updated_at=now,
     )
