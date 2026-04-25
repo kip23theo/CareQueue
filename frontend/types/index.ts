@@ -384,6 +384,18 @@ export interface AIRecommendRequest {
   lat: number
   lng: number
   symptoms: string
+  nearby_clinics?: Array<{
+    clinic_id?: string
+    id?: string
+    name: string
+    specializations?: string[]
+    queue_length?: number
+    est_wait_mins?: number
+    distance_km?: number
+    rating?: number
+  }>
+  radius_m?: number
+  top_k?: number
 }
 
 export interface AIRecommendation {

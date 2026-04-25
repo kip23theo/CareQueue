@@ -1,13 +1,13 @@
 'use client'
 
-import type { MouseEvent } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { cn, formatDistance, formatWaitTime } from '@/lib/utils'
 import { buildGoogleMapsDirectionsUrl } from '@/lib/location'
 import type { Clinic } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Clock, Star, ChevronRight, Zap, Navigation } from 'lucide-react'
+import { MapPin, Clock, Star, ChevronDown, ChevronRight, ChevronUp, Zap, Navigation } from 'lucide-react'
 
 interface Props {
   clinic: Clinic
@@ -52,9 +52,11 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch, aiReason }: Props) {
+  const [showMore, setShowMore] = useState(false)
   const clinicLat = clinic.location?.coordinates?.[1]
   const clinicLng = clinic.location?.coordinates?.[0]
   const hasCoordinates = Number.isFinite(clinicLat) && Number.isFinite(clinicLng)
+  const visibleSpecializations = showMore ? clinic.specializations : clinic.specializations.slice(0, 3)
 
   const handleGetDirections = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
@@ -116,15 +118,36 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
       {/* Specializations */}
       {clinic.specializations.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-3">
-          {clinic.specializations.slice(0, 3).map((s) => (
+          {visibleSpecializations.map((s) => (
             <span key={s} className="px-2 py-0.5 rounded-full text-xs bg-surface-100 text-surface-600 font-medium">
               {s}
             </span>
           ))}
-          {clinic.specializations.length > 3 && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-surface-100 text-surface-400">
+          {clinic.specializations.length > 3 && !showMore && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMore(true)
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-100 text-surface-500 hover:bg-surface-200"
+            >
               +{clinic.specializations.length - 3}
-            </span>
+              <ChevronDown size={12} />
+            </button>
+          )}
+          {clinic.specializations.length > 3 && showMore && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMore(false)
+              }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-100 text-surface-500 hover:bg-surface-200"
+            >
+              Show less
+              <ChevronUp size={12} />
+            </button>
           )}
         </div>
       )}
@@ -143,6 +166,10 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
             ~{formatWaitTime(clinic.est_wait_mins)}
           </span>
         )}
+        <span className="flex items-center gap-1 text-sm text-surface-600">
+          <Clock size={13} className="text-emerald-500" />
+          Visit ~{formatWaitTime(clinic.avg_consult_time)}
+        </span>
         {clinic.queue_length !== undefined && (
           <QueueDot count={clinic.queue_length} />
         )}

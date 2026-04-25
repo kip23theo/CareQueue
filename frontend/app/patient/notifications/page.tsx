@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Bell, Loader2, MessageSquare, Phone, RefreshCw, Smartphone } from 'lucide-react'
+import { Bell, MessageSquare, Phone, RefreshCw, Smartphone } from 'lucide-react'
 import { getUser } from '@/lib/auth'
 import { notificationsApi } from '@/lib/api-calls'
 import { usePatient } from '@/context/PatientContext'
@@ -48,7 +48,7 @@ export default function PatientNotificationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [user?.id, user?.role, myToken?._id])
+  }, [user, myToken])
 
   useEffect(() => {
     queueMicrotask(() => {

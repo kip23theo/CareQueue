@@ -62,7 +62,7 @@ async def get_notification_log(
         Notification.clinic_id == clinic_object_id
     ).sort("-sent_at").to_list()
 
-    token_ids = sorted({notification.token_id for notification in notifications})
+    token_ids = list({notification.token_id for notification in notifications})
     tokens = await QueueToken.find({"_id": {"$in": token_ids}}).to_list() if token_ids else []
     token_by_id = {str(token.id): token for token in tokens}
 
@@ -96,7 +96,7 @@ async def get_patient_notifications(
 
     token_by_id = {str(token.id): token for token in tokens}
     token_ids = [token.id for token in tokens]
-    clinic_ids = sorted({token.clinic_id for token in tokens})
+    clinic_ids = list({token.clinic_id for token in tokens})
     clinics = await Clinic.find({"_id": {"$in": clinic_ids}}).to_list() if clinic_ids else []
     clinic_by_id = {str(clinic.id): clinic for clinic in clinics}
 

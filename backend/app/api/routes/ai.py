@@ -140,12 +140,17 @@ async def chat(req: ChatRequest) -> ChatResponse:
 async def parse_patient(req: ParsePatientRequest) -> ParsePatientResponse:
     try:
         result = await ai_parse_patient(req.text)
+        confidence_raw = result.get("confidence", 0.0)
+        try:
+            confidence = float(confidence_raw)
+        except (TypeError, ValueError):
+            confidence = 0.0
         return ParsePatientResponse(
             name=str(result.get("name", "")).strip(),
             age=result.get("age"),
             symptoms=str(result.get("symptoms", "")).strip(),
             gender=result.get("gender"),
-            confidence=float(result.get("confidence", 0.0)),
+            confidence=confidence,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
@@ -292,7 +297,7 @@ async def predict_wait(
                 tokens=[],
             )
 
-        doctor_ids = sorted({
+        doctor_ids = list({
             token.doctor_id
             for token in waiting_tokens
             if token.doctor_id is not None

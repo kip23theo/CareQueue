@@ -686,7 +686,11 @@ export const aiApi = {
     api.post<unknown>(
       '/ai/chat',
       'messages' in body
-        ? { message: body.messages[body.messages.length - 1]?.content ?? '' }
+        ? {
+            message: body.messages[body.messages.length - 1]?.content ?? '',
+            history: body.messages.slice(0, -1),
+            clinic_context: body.clinic_context,
+          }
         : body
     ).then((res) => {
       const payload = (res.data ?? {}) as Partial<AIChatResponse>

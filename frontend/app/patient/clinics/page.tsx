@@ -76,6 +76,7 @@ export default function ClinicsPage() {
   const [error, setError] = useState<string | null>(null)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const [selectedClinicForBooking, setSelectedClinicForBooking] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(6)
   const trimmedLocationQuery = locationQuery.trim()
   const activeLocationLabel = location?.label?.trim()
     ? location.label
@@ -132,6 +133,7 @@ export default function ClinicsPage() {
       lng: suggestion.lng,
       label: suggestion.label,
     })
+    setVisibleCount(6)
     setLocationQuery(suggestion.label)
     setLocationSuggestions([])
     setLocationError(null)
@@ -156,6 +158,7 @@ export default function ClinicsPage() {
           // ignore reverse geocoding failures
         }
         setLocation({ lat, lng, label })
+        setVisibleCount(6)
         setLocationQuery(label)
         setLocationSuggestions([])
         setIsDetectingLocation(false)
@@ -180,6 +183,9 @@ export default function ClinicsPage() {
     else if (sort === 'rating') list.sort((a, b) => b.rating - a.rating)
     return list
   }, [nearbyClinics, search, sort, specFilter])
+
+  const visibleClinics = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+  const hasMoreClinics = filtered.length > visibleCount
 
   const handleBookClinic = (clinicId: string) => {
     const user = getUser()
@@ -350,12 +356,21 @@ export default function ClinicsPage() {
             <Input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setVisibleCount(6)
+              }}
               placeholder="Search clinics..."
               className="h-10 rounded-xl border-surface-200 bg-white pl-9 pr-4 text-sm"
             />
           </div>
-          <Select value={sort} onValueChange={setSort}>
+          <Select
+            value={sort}
+            onValueChange={(value) => {
+              setSort(value)
+              setVisibleCount(6)
+            }}
+          >
             <SelectTrigger className="w-36 h-10 rounded-xl border-surface-200 bg-white text-sm text-surface-700">
               <SelectValue />
             </SelectTrigger>
@@ -380,9 +395,12 @@ export default function ClinicsPage() {
           {SPECS.map((s) => (
             <Button
               key={s}
-              onClick={() => setSpecFilter((prev) =>
-                prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-              )}
+              onClick={() => {
+                setVisibleCount(6)
+                setSpecFilter((prev) =>
+                  prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                )
+              }}
               size="sm"
               variant={specFilter.includes(s) ? 'default' : 'outline'}
               className={cn(
@@ -416,7 +434,7 @@ export default function ClinicsPage() {
             <p className="text-surface-400 text-sm mt-1">Try increasing the search radius or adjusting filters</p>
           </div>
         ) : (
-          filtered.map((clinic) => {
+          visibleClinics.map((clinic) => {
             return (
               <ClinicCard
                 key={clinic._id}
@@ -427,6 +445,31 @@ export default function ClinicsPage() {
               />
             )
           })
+        )}
+
+        {!isLoading && !error && filtered.length > 0 && (
+          <div className="pt-2 pb-1 flex flex-col items-center gap-2">
+            {hasMoreClinics && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-xl border-surface-200 px-4 text-sm text-surface-700"
+                onClick={() => setVisibleCount((count) => count + 6)}
+              >
+                Show more clinics ({filtered.length - visibleCount} left)
+              </Button>
+            )}
+            {visibleCount > 6 && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-9 rounded-xl px-3 text-xs text-surface-500"
+                onClick={() => setVisibleCount(6)}
+              >
+                Show less
+              </Button>
+            )}
+          </div>
         )}
       </div>
       )}

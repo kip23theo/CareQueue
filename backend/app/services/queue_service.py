@@ -37,7 +37,7 @@ async def recalculate_waiting_positions(
         QueueToken.status == QueueStatus.WAITING,
     ).sort("+joined_at").to_list()
 
-    doctor_ids = sorted({
+    doctor_ids = list({
         token.doctor_id
         for token in waiting_tokens
         if token.doctor_id is not None

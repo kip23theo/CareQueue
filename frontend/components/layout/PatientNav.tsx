@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
-import { ArrowLeft, Activity, Bell, Compass, Home, LayoutDashboard, LogOut, Star } from 'lucide-react'
+import { Activity, Bell, Compass, Home, LayoutDashboard, LogOut, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { getUser, logout, subscribeAuth } from '@/lib/auth'
@@ -32,28 +32,14 @@ const quickLinks = [
 
 export function PatientNav({ myTokenId }: Props) {
   const pathname = usePathname()
-  const router = useRouter()
   const user = useSyncExternalStore(subscribeAuth, getUser, () => null)
 
   const isPatient = user?.role === 'patient'
-  const isDeep = pathname !== '/patient' && pathname !== '/patient/clinics'
 
   return (
     <nav className="sticky top-0 z-40 border-b border-surface-200/90 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {isDeep && (
-            <Button
-              onClick={() => router.back()}
-              variant="ghost"
-              size="sm"
-              className="h-9 rounded-full px-3 text-surface-600 hover:text-surface-900"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </Button>
-          )}
-
           <Link href="/patient" className="group inline-flex min-w-0 items-center gap-3">
             <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-sm shadow-brand-500/25">
               <Activity size={15} />
