@@ -200,8 +200,12 @@ async def cancel_token(token_id: str) -> CancelTokenResponse:
         QueueToken.position > old_position,
     ).sort("+position").to_list()
 
+    clinic = await Clinic.get(token.clinic_id)
+    avg = clinic.avg_consult_time if clinic else 8
+
     for t in behind:
         t.position -= 1
+        t.est_wait_mins = t.position * avg
         t.updated_at = now
         await t.save()
 
