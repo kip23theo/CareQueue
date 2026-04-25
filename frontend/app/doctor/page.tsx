@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { getUser } from '@/lib/auth'
 import { doctorsApi, adminQueueApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
@@ -23,7 +24,7 @@ import axios from 'axios'
 import {
   CheckCircle2, SkipForward, Siren, Stethoscope,
   PhoneCall, Clock, Users, Loader2,
-  ToggleLeft, ToggleRight, AlertCircle
+  ToggleLeft, ToggleRight, AlertCircle, Tv
 } from 'lucide-react'
 
 function StatPill({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
@@ -139,6 +140,19 @@ export default function DoctorPage() {
         </div>
         <div className="flex items-center gap-3">
           <SSEStatusDot status={sseStatus} showLabel />
+          {user?.clinic_id && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl border-surface-200 text-surface-700 hover:border-brand-300"
+            >
+              <Link href={`/display/${user.clinic_id}`} target="_blank" rel="noopener noreferrer">
+                <Tv size={14} />
+                TV Live Token
+              </Link>
+            </Button>
+          )}
           <Button
             onClick={() => setShowDelayModal(true)}
             variant="secondary"

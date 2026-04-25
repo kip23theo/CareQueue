@@ -19,6 +19,7 @@ from app.models.clinic import Clinic
 from app.models.doctor import Doctor
 from app.models.enums import ClinicVerificationStatus, QueueStatus
 from app.models.queue_token import QueueToken
+from app.models.user import User
 
 router = APIRouter()
 
@@ -147,6 +148,7 @@ async def get_nearby_clinics(
                 name=clinic.name,
                 clinic_image=clinic.clinic_image,
                 address=clinic.address,
+                phone=clinic.phone,
                 rating=clinic.rating,
                 avg_consult_time=clinic.avg_consult_time,
                 distance_km=round(distance_km, 2),
@@ -185,6 +187,13 @@ async def get_clinic_detail(
         )
 
     doctors = await Doctor.find(Doctor.clinic_id == clinic_object_id).to_list()
+    doctor_user_ids = list({doctor.user_id for doctor in doctors})
+    doctor_users = (
+        await User.find({"_id": {"$in": doctor_user_ids}}).to_list()
+        if doctor_user_ids
+        else []
+    )
+    doctor_phone_by_user_id = {str(user.id): user.phone for user in doctor_users}
 
     return ClinicDetailResponse(
         id=str(clinic.id),
@@ -204,6 +213,7 @@ async def get_clinic_detail(
             DoctorSummary(
                 id=str(doctor.id),
                 name=doctor.name,
+                phone=doctor_phone_by_user_id.get(str(doctor.user_id)),
                 doctor_image=doctor.doctor_image,
                 specialization=doctor.specialization,
                 avg_consult_mins=doctor.avg_consult_mins,
@@ -297,12 +307,20 @@ async def get_clinic_doctors(
         )
 
     doctors = await Doctor.find(Doctor.clinic_id == clinic_object_id).to_list()
+    doctor_user_ids = list({doctor.user_id for doctor in doctors})
+    doctor_users = (
+        await User.find({"_id": {"$in": doctor_user_ids}}).to_list()
+        if doctor_user_ids
+        else []
+    )
+    doctor_phone_by_user_id = {str(user.id): user.phone for user in doctor_users}
     return [
         {
             "_id": str(doctor.id),
             "clinic_id": str(doctor.clinic_id),
             "user_id": str(doctor.user_id),
             "name": doctor.name,
+            "phone": doctor_phone_by_user_id.get(str(doctor.user_id)),
             "doctor_image": doctor.doctor_image,
             "specialization": doctor.specialization,
             "avg_consult_mins": doctor.avg_consult_mins,

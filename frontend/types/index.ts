@@ -134,6 +134,7 @@ export interface Doctor {
   clinic_id: string
   user_id: string
   name: string
+  phone?: string | null
   doctor_image?: string | null
   specialization: string
   avg_consult_mins: number

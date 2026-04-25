@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { getUser } from '@/lib/auth'
 import { authApi, doctorsApi, resolveMediaUrl, uploadsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
@@ -27,6 +28,7 @@ import {
   Stethoscope,
   ToggleLeft,
   ToggleRight,
+  Tv,
   UserPlus2,
 } from 'lucide-react'
 
@@ -620,6 +622,19 @@ export default function AdminDoctorsPage() {
 
                   {/* Availability toggle */}
                   <div className="flex flex-col items-end gap-2 shrink-0">
+                    {doc.clinic_id && (
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-xl border-surface-200 text-xs text-surface-700 hover:border-brand-300"
+                      >
+                        <Link href={`/display/${doc.clinic_id}`} target="_blank" rel="noopener noreferrer">
+                          <Tv size={12} />
+                          TV Live Token
+                        </Link>
+                      </Button>
+                    )}
                     <Button
                       onClick={() => handleToggleAvailability(doc)}
                       disabled={isUpdating}

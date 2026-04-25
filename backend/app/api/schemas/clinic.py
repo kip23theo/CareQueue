@@ -14,6 +14,7 @@ class ClinicListItem(BaseModel):
         examples=["https://images.unsplash.com/photo-1586773860418-d37222d8fce3"],
     )
     address: str = Field(examples=["Connaught Place, New Delhi"])
+    phone: str = Field(examples=["+911100000001"])
     rating: float = Field(examples=[4.6])
     avg_consult_time: int = Field(examples=[8])
     distance_km: float | None = Field(default=None, examples=[1.4])
@@ -26,6 +27,7 @@ class ClinicListItem(BaseModel):
 class DoctorSummary(BaseModel):
     id: str = Field(examples=["69ec6f6ac3c51735cea88bd3"])
     name: str = Field(examples=["Demo Dr. Priya Sharma"])
+    phone: str | None = Field(default=None, examples=["+919999999999"])
     doctor_image: str | None = Field(
         default=None,
         examples=["https://images.unsplash.com/photo-1612349317150-e413f6a5b16d"],

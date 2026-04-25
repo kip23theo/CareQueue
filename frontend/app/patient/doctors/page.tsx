@@ -15,6 +15,7 @@ import {
 import { cn, formatWaitTime } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PhoneReveal } from '@/components/ui/PhoneReveal'
 import {
   Select,
   SelectContent,
@@ -600,6 +601,19 @@ export default function DoctorsPage() {
                         </span>
                       )}
                       <span>Rating {clinic.rating.toFixed(1)}</span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <PhoneReveal
+                        phone={doctor.phone}
+                        buttonLabel="Show doctor number"
+                        emptyLabel="Doctor phone unavailable"
+                      />
+                      <PhoneReveal
+                        phone={clinic.phone}
+                        buttonLabel="Show clinic number"
+                        emptyLabel="Clinic phone unavailable"
+                      />
                     </div>
 
                     <div className="mt-3 flex gap-2">

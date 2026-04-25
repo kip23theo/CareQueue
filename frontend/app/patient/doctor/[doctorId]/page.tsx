@@ -15,9 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { PhoneReveal } from '@/components/ui/PhoneReveal'
 import type { Clinic, Doctor, QueueToken } from '@/types'
 import axios from 'axios'
-import { MapPin, Phone, Star, Clock, Users, Loader2, Navigation, Stethoscope, Building2 } from 'lucide-react'
+import { MapPin, Star, Clock, Users, Loader2, Navigation, Stethoscope, Building2 } from 'lucide-react'
 
 const ACTIVE_TRACKABLE_STATUSES: Set<QueueToken['status']> = new Set([
   'WAITING',
@@ -280,11 +281,21 @@ export default function DoctorBookingPage() {
         </div>
 
         <div className="flex items-center gap-2 mt-2 text-sm text-surface-600">
-          <Phone size={13} />
-          <span>{clinic.phone}</span>
-          <span className="mx-1 text-surface-300">•</span>
           <Star size={13} className="text-amber-400 fill-amber-400" />
           <span>{clinic.rating.toFixed(1)}</span>
+        </div>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          <PhoneReveal
+            phone={doctor.phone}
+            buttonLabel="Show doctor number"
+            emptyLabel="Doctor phone unavailable"
+          />
+          <PhoneReveal
+            phone={clinic.phone}
+            buttonLabel="Show clinic number"
+            emptyLabel="Clinic phone unavailable"
+          />
         </div>
 
         <div className="mt-4 flex gap-2">

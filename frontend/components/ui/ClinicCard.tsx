@@ -7,6 +7,7 @@ import type { Clinic } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PhoneReveal } from '@/components/ui/PhoneReveal'
 import { MapPin, Clock, Star, ChevronDown, ChevronRight, ChevronUp, Zap, Navigation } from 'lucide-react'
 
 interface Props {
@@ -188,6 +189,15 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
           <QueueDot count={clinic.queue_length} />
         )}
         <StarRating rating={clinic.rating} />
+      </div>
+
+      <div className="mt-3">
+        <PhoneReveal
+          phone={clinic.phone}
+          buttonLabel="Show phone number"
+          emptyLabel="Clinic phone unavailable"
+          stopPropagation
+        />
       </div>
 
       {/* AI reason */}

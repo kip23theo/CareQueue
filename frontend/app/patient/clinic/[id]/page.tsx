@@ -15,9 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { PhoneReveal } from '@/components/ui/PhoneReveal'
 import type { Clinic, Doctor, QueueToken } from '@/types'
 import axios from 'axios'
-import { MapPin, Phone, Star, Clock, Users, Loader2, Stethoscope, Navigation } from 'lucide-react'
+import { MapPin, Star, Clock, Users, Loader2, Stethoscope, Navigation } from 'lucide-react'
 
 const ACTIVE_TRACKABLE_STATUSES: Set<QueueToken['status']> = new Set([
   'WAITING',
@@ -222,12 +223,17 @@ export default function ClinicDetailPage() {
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2 mb-4 text-sm text-surface-600">
-          <Phone size={13} />
-          <span>{clinic.phone}</span>
-          <span className="mx-2 text-surface-300">•</span>
+        <div className="flex items-center gap-2 mb-3 text-sm text-surface-600">
           <Star size={13} className="text-amber-400 fill-amber-400" />
           <span>{clinic.rating.toFixed(1)}</span>
+        </div>
+
+        <div className="mb-4">
+          <PhoneReveal
+            phone={clinic.phone}
+            buttonLabel="Show clinic number"
+            emptyLabel="Clinic phone unavailable"
+          />
         </div>
 
         <Button
@@ -288,56 +294,64 @@ export default function ClinicDetailPage() {
           </h2>
           <div className="space-y-2">
             {doctors.map((doc) => (
-              <Button
-                type="button"
-                key={doc._id}
-                onClick={() => doc.is_available && setSelectedDoctor(doc._id)}
-                disabled={!doc.is_available}
-                variant="ghost"
-                className={cn(
-                  'w-full h-auto justify-start flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
-                  selectedDoctor === doc._id
-                    ? 'border-brand-400 bg-brand-50'
-                    : 'border-surface-200 hover:border-surface-300',
-                  !doc.is_available && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                <span
+              <div key={doc._id}>
+                <Button
+                  type="button"
+                  onClick={() => doc.is_available && setSelectedDoctor(doc._id)}
+                  disabled={!doc.is_available}
+                  variant="ghost"
                   className={cn(
-                    'inline-flex h-4 w-4 items-center justify-center rounded-full border border-surface-300',
-                    selectedDoctor === doc._id && 'border-brand-500'
+                    'w-full h-auto justify-start flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
+                    selectedDoctor === doc._id
+                      ? 'border-brand-400 bg-brand-50'
+                      : 'border-surface-200 hover:border-surface-300',
+                    !doc.is_available && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   <span
                     className={cn(
-                      'h-2 w-2 rounded-full',
-                      selectedDoctor === doc._id ? 'bg-brand-500' : 'bg-transparent'
+                      'inline-flex h-4 w-4 items-center justify-center rounded-full border border-surface-300',
+                      selectedDoctor === doc._id && 'border-brand-500'
                     )}
-                  />
-                </span>
-                <div className="h-10 w-10 rounded-lg overflow-hidden bg-surface-100 border border-surface-200 shrink-0">
-                  {doc.doctor_image ? (
-                    <img src={doc.doctor_image} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+                  >
+                    <span
+                      className={cn(
+                        'h-2 w-2 rounded-full',
+                        selectedDoctor === doc._id ? 'bg-brand-500' : 'bg-transparent'
+                      )}
+                    />
+                  </span>
+                  <div className="h-10 w-10 rounded-lg overflow-hidden bg-surface-100 border border-surface-200 shrink-0">
+                    {doc.doctor_image ? (
+                      <img src={doc.doctor_image} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-xs font-semibold text-surface-500">
+                        {doc.name.trim().split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-surface-900">{doc.name}</p>
+                    <p className="text-xs text-surface-500">{doc.specialization}</p>
+                  </div>
+                  {doc.is_available ? (
+                    <Badge className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium border-transparent">
+                      Available
+                    </Badge>
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center text-xs font-semibold text-surface-500">
-                      {doc.name.trim().split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
-                    </div>
+                    <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-surface-500 border-transparent">
+                      Unavailable
+                    </Badge>
                   )}
+                </Button>
+                <div className="mt-1 px-1">
+                  <PhoneReveal
+                    phone={doc.phone}
+                    buttonLabel="Show phone number"
+                    emptyLabel="Doctor phone unavailable"
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-surface-900">{doc.name}</p>
-                  <p className="text-xs text-surface-500">{doc.specialization}</p>
-                </div>
-                {doc.is_available ? (
-                  <Badge className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium border-transparent">
-                    Available
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-surface-500 border-transparent">
-                    Unavailable
-                  </Badge>
-                )}
-              </Button>
+              </div>
             ))}
           </div>
         </Card>

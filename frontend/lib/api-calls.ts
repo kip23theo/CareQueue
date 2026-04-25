@@ -100,6 +100,7 @@ function toDoctor(raw: unknown): Doctor {
     clinic_id: doctor.clinic_id ?? '',
     user_id: doctor.user_id ?? '',
     name: doctor.name ?? 'Doctor',
+    phone: doctor.phone ?? null,
     doctor_image: resolveMediaUrl(doctor.doctor_image),
     specialization: doctor.specialization ?? 'General Physician',
     avg_consult_mins: doctor.avg_consult_mins ?? 10,
