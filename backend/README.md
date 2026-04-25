@@ -35,3 +35,9 @@ FastAPI backend starter for CareQueue.
    ```text
    http://127.0.0.1:8000/docs
    ```
+
+## Documentation
+
+- API: ./docs/api.md
+- Schema: ./docs/schema.md
+- Architecture: ./docs/architecture.md
