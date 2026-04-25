@@ -337,8 +337,17 @@ async def seed_data() -> None:
             f"{len(queue_tokens)} queue tokens, "
             f"{len(history_entries)} history entries, {len(documents)} documents"
         )
-        print(f"Primary clinic id: {clinic_one.id}")
-        print("Demo logins:")
+        print("\n--- IDs for Swagger testing ---")
+        for c in clinics:
+            print(f"  clinic: {c.id}  ({c.name})")
+        for d in doctors:
+            print(f"  doctor: {d.id}  ({d.name}, clinic={d.clinic_id})")
+        for qt in queue_tokens:
+            print(
+                f"  token:  {qt.id}  "
+                f"(#{qt.token_number} {qt.status.value} pos={qt.position})"
+            )
+        print("\nDemo logins:")
         print("  admin@demo.carequeue.local / password123")
         print("  doctor@demo.carequeue.local / password123")
         print("  receptionist@demo.carequeue.local / password123")
