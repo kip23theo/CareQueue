@@ -101,7 +101,7 @@ export function TokenCard({ token, variant = 'patient', onSkip, onEmergency, onC
       <div className="flex flex-wrap gap-3 text-sm text-surface-600 mb-4">
         <span>{token.patient_age} yrs • {token.patient_gender || 'N/A'}</span>
         {token.symptoms && (
-          <span className="text-surface-500 italic truncate max-w-xs">"{token.symptoms}"</span>
+          <span className="text-surface-500 italic truncate max-w-xs">&ldquo;{token.symptoms}&rdquo;</span>
         )}
       </div>
 

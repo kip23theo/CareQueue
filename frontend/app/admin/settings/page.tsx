@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { Clinic } from '@/types'
 import axios from 'axios'
-import { Save, Loader2, Plus, X, Clock } from 'lucide-react'
+import { Save, Loader2, Clock } from 'lucide-react'
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const
 type Day = typeof DAYS[number]
@@ -22,7 +22,6 @@ const SPEC_OPTIONS = ['General', 'Paediatrics', 'ENT', 'Orthopaedics', 'Gynaecol
 export default function AdminSettingsPage() {
   const user = getUser()
   const { success, error: toastError } = useToast()
-  const [clinic, setClinic] = useState<Clinic | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({
     name: '', address: '', phone: '',

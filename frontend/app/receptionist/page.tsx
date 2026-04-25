@@ -7,7 +7,6 @@ import { adminQueueApi, aiApi, doctorsApi } from '@/lib/api-calls'
 import { getUser } from '@/lib/auth'
 import { QueueList } from '@/components/queue/QueueList'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { cn, formatTokenDisplay } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import type { Doctor } from '@/types'
 import axios from 'axios'
-import { Plus, Search, Loader2, Sparkles, Users, PhoneCall, Stethoscope, CheckCircle2, SkipForward } from 'lucide-react'
+import { Plus, Search, Loader2, Sparkles, Users, PhoneCall, CheckCircle2, SkipForward } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function ReceptionistPage() {
@@ -127,7 +126,7 @@ export default function ReceptionistPage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h1 className="text-xl font-bold font-heading text-surface-900">Queue Board</h1>
-              <p className="text-sm text-surface-500">Today's live queue</p>
+              <p className="text-sm text-surface-500">Today&apos;s live queue</p>
             </div>
             <div className="flex items-center gap-3">
               <SSEStatusDot status={sseStatus} showLabel />

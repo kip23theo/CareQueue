@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, MessageCircle, CheckCircle, XCircle } from 'lucide-react'
+import { Bell } from 'lucide-react'
 
 export default function PatientNotificationsPage() {
   return (
@@ -11,7 +11,7 @@ export default function PatientNotificationsPage() {
           <Bell size={28} className="text-surface-400" />
         </div>
         <p className="text-surface-600 font-medium">No notifications yet</p>
-        <p className="text-surface-400 text-sm mt-1">You'll see alerts here when you're called</p>
+        <p className="text-surface-400 text-sm mt-1">You&apos;ll see alerts here when you&apos;re called</p>
       </div>
     </div>
   )

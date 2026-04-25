@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -26,8 +25,8 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import type { Clinic, AIRecommendation } from '@/types'
-import { Search, SlidersHorizontal, Sparkles, X, Loader2 } from 'lucide-react'
+import type { AIRecommendation } from '@/types'
+import { Search, Sparkles, X, Loader2 } from 'lucide-react'
 import axios from 'axios'
 
 const SPECS = ['General', 'Paediatrics', 'ENT', 'Orthopaedics', 'Gynaecology', 'Cardiology']
@@ -102,8 +101,6 @@ export default function ClinicsPage() {
       setIsAILoading(false)
     }
   }
-
-  const aiRecommendedIds = new Set(aiRecommendations.map((r) => r.clinic_id))
 
   const filtered = useMemo(() => {
     let list = [...nearbyClinics]

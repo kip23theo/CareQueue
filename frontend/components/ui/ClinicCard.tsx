@@ -4,7 +4,7 @@ import { cn, formatDistance, formatWaitTime } from '@/lib/utils'
 import type { Clinic } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Clock, Star, Users, ChevronRight, Zap } from 'lucide-react'
+import { MapPin, Clock, Star, ChevronRight, Zap } from 'lucide-react'
 
 interface Props {
   clinic: Clinic

@@ -40,12 +40,16 @@ export function QueueProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!clinicId) return
-    refresh()
+    queueMicrotask(() => {
+      void refresh()
+    })
     disconnectRef.current = connectSSE(
       clinicId,
       (event) => {
         if (event.type === 'queue_updated') {
-          refresh()
+          queueMicrotask(() => {
+            void refresh()
+          })
         }
       },
       () => setSseStatus('connected'),

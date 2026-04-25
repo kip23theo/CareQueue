@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import type { Clinic, QueueToken } from '@/types'
 
 interface Location {
@@ -20,22 +20,27 @@ interface PatientContextValue {
 const PatientContext = createContext<PatientContextValue | null>(null)
 
 export function PatientProvider({ children }: { children: ReactNode }) {
-  const [location, setLocationState] = useState<Location | null>(null)
-  const [nearbyClinics, setNearbyClinics] = useState<Clinic[]>([])
-  const [myToken, setMyTokenState] = useState<QueueToken | null>(null)
-
-  useEffect(() => {
-    // Restore location from sessionStorage
+  const [location, setLocationState] = useState<Location | null>(() => {
+    if (typeof window === 'undefined') return null
     const savedLoc = sessionStorage.getItem('cf_location')
-    if (savedLoc) {
-      try { setLocationState(JSON.parse(savedLoc)) } catch { /* ignore */ }
+    if (!savedLoc) return null
+    try {
+      return JSON.parse(savedLoc) as Location
+    } catch {
+      return null
     }
-    // Restore my token from localStorage
+  })
+  const [nearbyClinics, setNearbyClinics] = useState<Clinic[]>([])
+  const [myToken, setMyTokenState] = useState<QueueToken | null>(() => {
+    if (typeof window === 'undefined') return null
     const savedToken = localStorage.getItem('cf_my_token')
-    if (savedToken) {
-      try { setMyTokenState(JSON.parse(savedToken)) } catch { /* ignore */ }
+    if (!savedToken) return null
+    try {
+      return JSON.parse(savedToken) as QueueToken
+    } catch {
+      return null
     }
-  }, [])
+  })
 
   const setLocation = (loc: Location) => {
     setLocationState(loc)
