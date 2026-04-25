@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
-import { Activity, Eye, EyeOff, Loader2, Plus, Trash2 } from 'lucide-react'
+import { Activity, Eye, EyeOff, Loader2, LocateFixed, Plus, Trash2 } from 'lucide-react'
 
 import { authApi } from '@/lib/api-calls'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ type StaffDraft = {
   name: string
   email: string
   password: string
+  doctor_image: string
   specialization: string
 }
 
@@ -33,6 +34,7 @@ function emptyStaff(role: 'doctor' | 'receptionist' = 'doctor'): StaffDraft {
     name: '',
     email: '',
     password: '',
+    doctor_image: '',
     specialization: role === 'doctor' ? 'General Physician' : '',
   }
 }
@@ -44,10 +46,13 @@ export default function RegisterClinicPage() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const [clinicName, setClinicName] = useState('')
+  const [clinicImage, setClinicImage] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
 
   const [adminName, setAdminName] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
@@ -74,6 +79,27 @@ export default function RegisterClinicPage() {
     setShowStaffPasswords((prev) => ({ ...prev, [idx]: !prev[idx] }))
   }
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported in this browser.')
+      return
+    }
+
+    setLocationError(null)
+    setIsDetectingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toFixed(6))
+        setLongitude(position.coords.longitude.toFixed(6))
+        setIsDetectingLocation(false)
+      },
+      () => {
+        setLocationError('Location access denied. Enter latitude and longitude manually.')
+        setIsDetectingLocation(false)
+      }
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -93,6 +119,7 @@ export default function RegisterClinicPage() {
     try {
       const { data } = await authApi.registerClinic({
         clinic_name: clinicName,
+        clinic_image: clinicImage.trim() || undefined,
         address,
         phone,
         latitude: lat,
@@ -105,6 +132,7 @@ export default function RegisterClinicPage() {
           name: entry.name,
           email: entry.email,
           password: entry.password,
+          doctor_image: entry.role === 'doctor' ? (entry.doctor_image.trim() || undefined) : undefined,
           specialization: entry.role === 'doctor' ? entry.specialization : undefined,
         })),
       })
@@ -154,6 +182,15 @@ export default function RegisterClinicPage() {
               <Input value={address} onChange={(e) => setAddress(e.target.value)} required placeholder="Street, City, State" />
             </div>
 
+            <div>
+              <Label className="mb-1.5 block">Clinic Image URL</Label>
+              <Input
+                value={clinicImage}
+                onChange={(e) => setClinicImage(e.target.value)}
+                placeholder="https://example.com/clinic.jpg"
+              />
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label className="mb-1.5 block">Latitude</Label>
@@ -163,6 +200,24 @@ export default function RegisterClinicPage() {
                 <Label className="mb-1.5 block">Longitude</Label>
                 <Input value={longitude} onChange={(e) => setLongitude(e.target.value)} required placeholder="77.2090" />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleUseCurrentLocation}
+                disabled={isDetectingLocation}
+                className="h-10 rounded-xl"
+              >
+                {isDetectingLocation ? (
+                  <><Loader2 size={14} className="animate-spin" /> Detecting location...</>
+                ) : (
+                  <><LocateFixed size={14} /> Use current location</>
+                )}
+              </Button>
+              <p className="text-xs text-surface-500">Autofills latitude and longitude from your device location.</p>
+              {locationError && <p className="text-xs text-red-600">{locationError}</p>}
             </div>
           </Card>
 
@@ -271,11 +326,21 @@ export default function RegisterClinicPage() {
                           {showStaffPasswords[idx] ? <EyeOff size={16} /> : <Eye size={16} />}
                         </Button>
                       </div>
-                      {entry.role === 'doctor' ? (
-                        <Input value={entry.specialization} onChange={(e) => updateStaff(idx, { specialization: e.target.value })} placeholder="Specialization" />
-                      ) : (
-                        <Input disabled value="Reception desk" />
-                      )}
+                      <Input
+                        value={entry.role === 'doctor' ? entry.specialization : 'Reception desk'}
+                        onChange={(e) => updateStaff(idx, { specialization: e.target.value })}
+                        placeholder="Specialization"
+                        disabled={entry.role !== 'doctor'}
+                      />
+                    </div>
+
+                    <div>
+                      <Input
+                        value={entry.role === 'doctor' ? entry.doctor_image : ''}
+                        onChange={(e) => updateStaff(idx, { doctor_image: e.target.value })}
+                        placeholder="Doctor image URL (optional)"
+                        disabled={entry.role !== 'doctor'}
+                      />
                     </div>
                   </div>
                 ))}

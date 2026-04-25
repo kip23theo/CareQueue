@@ -50,6 +50,7 @@ function toClinic(raw: unknown): Clinic {
   return {
     _id: c._id ?? c.id ?? '',
     name: c.name ?? 'Clinic',
+    clinic_image: c.clinic_image ?? null,
     address: c.address ?? '',
     location: c.location ?? { type: 'Point', coordinates: [0, 0] },
     google_maps_link: c.google_maps_link ?? null,
@@ -194,6 +195,7 @@ function toSuperAdminClinic(raw: unknown): SuperAdminClinic {
   return {
     id: clinic.id ?? '',
     name: clinic.name ?? 'Clinic',
+    clinic_image: clinic.clinic_image ?? null,
     address: clinic.address ?? '',
     phone: clinic.phone ?? '',
     latitude: clinic.latitude ?? null,

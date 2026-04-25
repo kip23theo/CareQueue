@@ -6,11 +6,10 @@ import { CheckCircle2, Clock3, Users, XCircle, RefreshCw, Building2 } from 'luci
 import { superAdminApi } from '@/lib/api-calls'
 import { getUser } from '@/lib/auth'
 import { useToast } from '@/context/ToastContext'
-import type { PlatformFeedback, SuperAdminClinic, SuperAdminOverview, SuperAdminUser } from '@/types'
+import type { SuperAdminClinic, SuperAdminOverview, SuperAdminUser } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Stars } from '@/components/reviews/Stars'
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
@@ -31,13 +30,6 @@ const STATUS_FILTERS: Array<'all' | 'pending' | 'approved' | 'rejected'> = [
   'rejected',
 ]
 
-const FEEDBACK_ROLE_FILTERS: Array<'all' | 'admin' | 'doctor' | 'patient'> = [
-  'all',
-  'admin',
-  'doctor',
-  'patient',
-]
-
 export default function SuperAdminPage() {
   const { success, error } = useToast()
   const currentUser = getUser()
@@ -45,12 +37,10 @@ export default function SuperAdminPage() {
   const [overview, setOverview] = useState<SuperAdminOverview | null>(null)
   const [clinics, setClinics] = useState<SuperAdminClinic[]>([])
   const [users, setUsers] = useState<SuperAdminUser[]>([])
-  const [platformFeedback, setPlatformFeedback] = useState<PlatformFeedback[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [updatingClinicId, setUpdatingClinicId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
-  const [feedbackRoleFilter, setFeedbackRoleFilter] = useState<'all' | 'admin' | 'doctor' | 'patient'>('all')
   const [userSearch, setUserSearch] = useState('')
 
   const load = useCallback(async () => {
@@ -61,26 +51,21 @@ export default function SuperAdminPage() {
 
     setIsRefreshing(true)
     try {
-      const [overviewRes, clinicsRes, usersRes, feedbackRes] = await Promise.all([
+      const [overviewRes, clinicsRes, usersRes] = await Promise.all([
         superAdminApi.getOverview(),
         superAdminApi.getClinics(statusFilter === 'all' ? undefined : statusFilter),
         superAdminApi.getUsers(),
-        superAdminApi.getPlatformFeedback({
-          viewer_user_id: currentUser.id,
-          role: feedbackRoleFilter === 'all' ? undefined : feedbackRoleFilter,
-        }),
       ])
       setOverview(overviewRes.data)
       setClinics(clinicsRes.data)
       setUsers(usersRes.data)
-      setPlatformFeedback(feedbackRes.data)
     } catch {
       error('Failed to load super admin data')
     } finally {
       setIsLoading(false)
       setIsRefreshing(false)
     }
-  }, [currentUser?.id, error, feedbackRoleFilter, statusFilter])
+  }, [currentUser?.id, error, statusFilter])
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -173,16 +158,27 @@ export default function SuperAdminPage() {
               return (
                 <div key={clinic.id} className="rounded-xl border border-surface-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-surface-900">{clinic.name}</p>
-                      <p className="text-sm text-surface-500">{clinic.address}</p>
-                      <p className="text-xs text-surface-400 mt-1">{clinic.admin?.email || 'No admin email'} • {clinic.user_count} users</p>
-                      {(clinic.latitude !== null && clinic.longitude !== null) && (
-                        <p className="text-xs text-surface-400">Lat: {clinic.latitude}, Lng: {clinic.longitude}</p>
-                      )}
-                      {clinic.rejection_reason && (
-                        <p className="text-xs text-red-600 mt-1">Reason: {clinic.rejection_reason}</p>
-                      )}
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="h-12 w-12 rounded-xl overflow-hidden border border-surface-200 bg-surface-100 shrink-0">
+                        {clinic.clinic_image ? (
+                          <img src={clinic.clinic_image} alt={clinic.name} className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-sm font-semibold text-surface-500">
+                            {clinic.name.trim().charAt(0).toUpperCase() || 'C'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-surface-900">{clinic.name}</p>
+                        <p className="text-sm text-surface-500">{clinic.address}</p>
+                        <p className="text-xs text-surface-400 mt-1">{clinic.admin?.email || 'No admin email'} • {clinic.user_count} users</p>
+                        {(clinic.latitude !== null && clinic.longitude !== null) && (
+                          <p className="text-xs text-surface-400">Lat: {clinic.latitude}, Lng: {clinic.longitude}</p>
+                        )}
+                        {clinic.rejection_reason && (
+                          <p className="text-xs text-red-600 mt-1">Reason: {clinic.rejection_reason}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -255,61 +251,6 @@ export default function SuperAdminPage() {
                   <p className="text-xs text-surface-600 capitalize">{user.role.replace('_', ' ')}</p>
                   <p className="text-xs text-surface-400">{user.clinic_name || 'Platform user'}</p>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card className="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <h2 className="font-semibold font-heading text-surface-900">Platform Feedback</h2>
-          <div className="flex flex-wrap gap-2">
-            {FEEDBACK_ROLE_FILTERS.map((item) => (
-              <Button
-                key={item}
-                type="button"
-                size="sm"
-                variant={feedbackRoleFilter === item ? 'default' : 'outline'}
-                onClick={() => setFeedbackRoleFilter(item)}
-                className="rounded-xl capitalize"
-              >
-                {item}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((idx) => <div key={idx} className="skeleton h-20 rounded-xl" />)}
-          </div>
-        ) : platformFeedback.length === 0 ? (
-          <p className="text-sm text-surface-500 py-6 text-center">No platform feedback yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {platformFeedback.map((feedback) => (
-              <div key={feedback.id} className="rounded-xl border border-surface-200 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-surface-900">{feedback.user_name}</p>
-                    <p className="text-xs text-surface-500">{feedback.user_email}</p>
-                    <p className="text-xs text-surface-400 mt-1">{feedback.clinic_name || 'Platform user'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-surface-600 capitalize">{feedback.user_role}</p>
-                    <p className="text-xs text-surface-400">{new Date(feedback.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <Stars value={feedback.rating} />
-                  <span className="text-xs text-surface-500">{feedback.rating}/5</span>
-                </div>
-                {feedback.comment ? (
-                  <p className="text-sm text-surface-700 mt-2 whitespace-pre-wrap">{feedback.comment}</p>
-                ) : (
-                  <p className="text-sm text-surface-400 mt-2 italic">No comment provided.</p>
-                )}
               </div>
             ))}
           </div>

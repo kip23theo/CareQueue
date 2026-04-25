@@ -13,6 +13,7 @@ from app.models.enums import ClinicVerificationStatus
 class Clinic(TimestampMixin, Document):
     name: str
     location: dict[str, Any]
+    clinic_image: str | None = None
     google_maps_link: str | None = None
     address: str
     phone: str

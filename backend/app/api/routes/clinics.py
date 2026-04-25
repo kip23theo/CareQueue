@@ -145,6 +145,7 @@ async def get_nearby_clinics(
             ClinicListItem(
                 id=str(clinic.id),
                 name=clinic.name,
+                clinic_image=clinic.clinic_image,
                 address=clinic.address,
                 rating=clinic.rating,
                 avg_consult_time=clinic.avg_consult_time,
@@ -188,6 +189,7 @@ async def get_clinic_detail(
     return ClinicDetailResponse(
         id=str(clinic.id),
         name=clinic.name,
+        clinic_image=clinic.clinic_image,
         location=clinic.location,
         google_maps_link=clinic.google_maps_link,
         address=clinic.address,
@@ -202,6 +204,7 @@ async def get_clinic_detail(
             DoctorSummary(
                 id=str(doctor.id),
                 name=doctor.name,
+                doctor_image=doctor.doctor_image,
                 specialization=doctor.specialization,
                 avg_consult_mins=doctor.avg_consult_mins,
                 is_available=doctor.is_available,
@@ -300,6 +303,7 @@ async def get_clinic_doctors(
             "clinic_id": str(doctor.clinic_id),
             "user_id": str(doctor.user_id),
             "name": doctor.name,
+            "doctor_image": doctor.doctor_image,
             "specialization": doctor.specialization,
             "avg_consult_mins": doctor.avg_consult_mins,
             "is_available": doctor.is_available,

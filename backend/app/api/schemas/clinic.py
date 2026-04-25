@@ -9,6 +9,10 @@ from app.models.enums import QueueStatus
 class ClinicListItem(BaseModel):
     id: str = Field(examples=["69ec6f6ac3c51735cea88bcb"])
     name: str = Field(examples=["Demo City Clinic"])
+    clinic_image: str | None = Field(
+        default=None,
+        examples=["https://images.unsplash.com/photo-1586773860418-d37222d8fce3"],
+    )
     address: str = Field(examples=["Connaught Place, New Delhi"])
     rating: float = Field(examples=[4.6])
     avg_consult_time: int = Field(examples=[8])
@@ -22,6 +26,10 @@ class ClinicListItem(BaseModel):
 class DoctorSummary(BaseModel):
     id: str = Field(examples=["69ec6f6ac3c51735cea88bd3"])
     name: str = Field(examples=["Demo Dr. Priya Sharma"])
+    doctor_image: str | None = Field(
+        default=None,
+        examples=["https://images.unsplash.com/photo-1612349317150-e413f6a5b16d"],
+    )
     specialization: str = Field(examples=["General Physician"])
     avg_consult_mins: int = Field(examples=[8])
     is_available: bool = Field(examples=[True])
@@ -31,6 +39,10 @@ class DoctorSummary(BaseModel):
 class ClinicDetailResponse(BaseModel):
     id: str = Field(examples=["69ec6f6ac3c51735cea88bcb"])
     name: str = Field(examples=["Demo City Clinic"])
+    clinic_image: str | None = Field(
+        default=None,
+        examples=["https://images.unsplash.com/photo-1586773860418-d37222d8fce3"],
+    )
     location: dict[str, Any] = Field(
         examples=[{"type": "Point", "coordinates": [77.209, 28.6139]}]
     )

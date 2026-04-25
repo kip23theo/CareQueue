@@ -121,11 +121,22 @@ export default function ClinicDetailPage() {
       {/* Hero */}
       <Card className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <h1 className="text-2xl font-bold font-heading text-surface-900">{clinic.name}</h1>
-            <div className="flex items-center gap-1 mt-1 text-sm text-surface-500">
-              <MapPin size={14} />
-              {clinic.address}
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="h-16 w-16 rounded-xl overflow-hidden bg-surface-100 border border-surface-200 shrink-0">
+              {clinic.clinic_image ? (
+                <img src={clinic.clinic_image} alt={clinic.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-lg font-semibold text-surface-500">
+                  {clinic.name.trim().charAt(0).toUpperCase() || 'C'}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold font-heading text-surface-900">{clinic.name}</h1>
+              <div className="flex items-center gap-1 mt-1 text-sm text-surface-500">
+                <MapPin size={14} />
+                {clinic.address}
+              </div>
             </div>
           </div>
           <Badge className={cn(
@@ -231,6 +242,15 @@ export default function ClinicDetailPage() {
                     )}
                   />
                 </span>
+                <div className="h-10 w-10 rounded-lg overflow-hidden bg-surface-100 border border-surface-200 shrink-0">
+                  {doc.doctor_image ? (
+                    <img src={doc.doctor_image} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-xs font-semibold text-surface-500">
+                      {doc.name.trim().split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'DR'}
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-surface-900">{doc.name}</p>
                   <p className="text-xs text-surface-500">{doc.specialization}</p>

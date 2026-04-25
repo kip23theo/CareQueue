@@ -87,12 +87,17 @@ export default function AdminDoctorsPage() {
               )}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Avatar */}
                     <div className={cn(
-                      'w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shrink-0',
-                      doc.is_available ? 'bg-brand-500' : 'bg-surface-400'
+                      'w-12 h-12 rounded-xl overflow-hidden border border-surface-200 shrink-0',
+                      !doc.doctor_image && (doc.is_available ? 'bg-brand-500' : 'bg-surface-400')
                     )}>
-                      {doc.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      {doc.doctor_image ? (
+                        <img src={doc.doctor_image} alt={doc.name} className="h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-white font-bold">
+                          {doc.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-surface-900 font-heading">Dr. {doc.name}</p>

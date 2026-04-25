@@ -37,12 +37,14 @@ export interface RegisterClinicStaffInput {
   email: string
   password: string
   role: 'doctor' | 'receptionist'
+  doctor_image?: string
   specialization?: string
   avg_consult_mins?: number
 }
 
 export interface RegisterClinicRequest {
   clinic_name: string
+  clinic_image?: string
   address: string
   phone: string
   latitude: number
@@ -82,6 +84,7 @@ export interface OpeningHours {
 export interface Clinic {
   _id: string
   name: string
+  clinic_image?: string | null
   address: string
   location: GeoLocation
   google_maps_link?: string | null
@@ -112,6 +115,7 @@ export interface Doctor {
   clinic_id: string
   user_id: string
   name: string
+  doctor_image?: string | null
   specialization: string
   avg_consult_mins: number
   is_available: boolean
@@ -485,6 +489,7 @@ export interface SuperAdminOverview {
 export interface SuperAdminClinic {
   id: string
   name: string
+  clinic_image?: string | null
   address: string
   phone: string
   latitude: number | null

@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { Clinic } from '@/types'
 import axios from 'axios'
-import { Save, Loader2, Clock, ExternalLink } from 'lucide-react'
+import { Save, Loader2, Clock, ExternalLink, LocateFixed } from 'lucide-react'
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const
 type Day = typeof DAYS[number]
@@ -23,8 +23,10 @@ export default function AdminSettingsPage() {
   const user = getUser()
   const { success, error: toastError } = useToast()
   const [isSaving, setIsSaving] = useState(false)
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
   const [form, setForm] = useState({
-    name: '', address: '', phone: '',
+    name: '', clinic_image: '', address: '', phone: '',
     google_maps_link: '',
     avg_consult_time: 15,
     is_open: true,
@@ -47,6 +49,7 @@ export default function AdminSettingsPage() {
       setForm((prev) => ({
         ...prev,
         name: data.name,
+        clinic_image: data.clinic_image ?? '',
         address: data.address,
         phone: data.phone,
         google_maps_link: data.google_maps_link ?? fallbackLink,
@@ -70,6 +73,7 @@ export default function AdminSettingsPage() {
     try {
       await clinicAdminApi.update(user.clinic_id, {
         name: form.name,
+        clinic_image: form.clinic_image,
         address: form.address,
         phone: form.phone,
         google_maps_link: mapsLink,
@@ -95,6 +99,31 @@ export default function AdminSettingsPage() {
     }))
   }
 
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported in this browser.')
+      return
+    }
+
+    setLocationError(null)
+    setIsDetectingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(6)
+        const lng = position.coords.longitude.toFixed(6)
+        setForm((prev) => ({
+          ...prev,
+          google_maps_link: `https://www.google.com/maps?q=${lat},${lng}`,
+        }))
+        setIsDetectingLocation(false)
+      },
+      () => {
+        setLocationError('Location access denied. Paste the clinic map link manually.')
+        setIsDetectingLocation(false)
+      }
+    )
+  }
+
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold font-heading text-surface-900 mb-6">Clinic Settings</h1>
@@ -108,6 +137,15 @@ export default function AdminSettingsPage() {
             <Input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
               className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
               placeholder="City Clinic" />
+          </div>
+          <div>
+            <Label className="block text-xs font-medium text-surface-600 mb-1.5">Clinic Image URL</Label>
+            <Input
+              value={form.clinic_image}
+              onChange={e => setForm(f => ({ ...f, clinic_image: e.target.value }))}
+              className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
+              placeholder="https://example.com/clinic.jpg"
+            />
           </div>
           <div>
             <Label className="block text-xs font-medium text-surface-600 mb-1.5">Address</Label>
@@ -131,28 +169,44 @@ export default function AdminSettingsPage() {
           </div>
           <div>
             <Label className="block text-xs font-medium text-surface-600 mb-1.5">Google Maps Link</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
                 value={form.google_maps_link}
                 onChange={e => setForm(f => ({ ...f, google_maps_link: e.target.value }))}
-                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm"
+                className="h-10 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm sm:flex-1"
                 placeholder="https://www.google.com/maps/place/..."
               />
-              {form.google_maps_link.trim() && (
+              <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   className="h-10 rounded-xl border-surface-200 text-surface-700 px-3"
-                  onClick={() => window.open(form.google_maps_link.trim(), '_blank', 'noopener,noreferrer')}
+                  onClick={handleUseCurrentLocation}
+                  disabled={isDetectingLocation}
                 >
-                  <ExternalLink size={14} />
-                  Open
+                  {isDetectingLocation ? (
+                    <><Loader2 size={14} className="animate-spin" /> Detecting...</>
+                  ) : (
+                    <><LocateFixed size={14} /> Use current</>
+                  )}
                 </Button>
-              )}
+                {form.google_maps_link.trim() && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 rounded-xl border-surface-200 text-surface-700 px-3"
+                    onClick={() => window.open(form.google_maps_link.trim(), '_blank', 'noopener,noreferrer')}
+                  >
+                    <ExternalLink size={14} />
+                    Open
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="text-[11px] text-surface-500 mt-1.5">
               Paste the clinic&apos;s Google Maps URL. Coordinates are auto-extracted from this link.
             </p>
+            {locationError && <p className="text-[11px] text-red-600 mt-1">{locationError}</p>}
           </div>
           <div className="flex items-center justify-between">
             <div>

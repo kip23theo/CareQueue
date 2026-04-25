@@ -114,6 +114,7 @@ async def list_clinics(
             {
                 "id": str(clinic.id),
                 "name": clinic.name,
+                "clinic_image": clinic.clinic_image,
                 "address": clinic.address,
                 "phone": clinic.phone,
                 "latitude": lat,

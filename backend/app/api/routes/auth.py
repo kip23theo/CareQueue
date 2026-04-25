@@ -67,12 +67,14 @@ class RegisterStaffInput(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     role: Literal["doctor", "receptionist"]
+    doctor_image: str | None = Field(default=None, max_length=2000)
     specialization: str | None = Field(default=None, max_length=120)
     avg_consult_mins: int | None = Field(default=10, ge=1, le=120)
 
 
 class RegisterClinicRequest(BaseModel):
     clinic_name: str = Field(min_length=2, max_length=160)
+    clinic_image: str | None = Field(default=None, max_length=2000)
     address: str = Field(min_length=2, max_length=260)
     phone: str = Field(min_length=5, max_length=40)
     latitude: float = Field(ge=-90, le=90)
@@ -99,6 +101,7 @@ class RegisterStaffRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=6)
     role: Literal["doctor", "receptionist"]
+    doctor_image: str | None = Field(default=None, max_length=2000)
     specialization: str | None = Field(default=None, max_length=120)
     avg_consult_mins: int | None = Field(default=10, ge=1, le=120)
 
@@ -236,6 +239,7 @@ async def register_clinic(payload: RegisterClinicRequest) -> RegisterClinicRespo
             "type": "Point",
             "coordinates": [payload.longitude, payload.latitude],
         },
+        clinic_image=(payload.clinic_image or "").strip() or None,
         address=payload.address.strip(),
         phone=payload.phone.strip(),
         specializations=[spec.strip() for spec in payload.specializations if spec.strip()],
@@ -274,6 +278,7 @@ async def register_clinic(payload: RegisterClinicRequest) -> RegisterClinicRespo
                 clinic_id=clinic.id,
                 user_id=staff_user.id,
                 name=member.name.strip(),
+                doctor_image=(member.doctor_image or "").strip() or None,
                 specialization=(member.specialization or "General Physician").strip(),
                 avg_consult_mins=member.avg_consult_mins or 10,
                 is_available=True,
@@ -319,6 +324,7 @@ async def register_staff(payload: RegisterStaffRequest) -> RegisterStaffResponse
             clinic_id=clinic.id,
             user_id=user.id,
             name=payload.name.strip(),
+            doctor_image=(payload.doctor_image or "").strip() or None,
             specialization=(payload.specialization or "General Physician").strip(),
             avg_consult_mins=payload.avg_consult_mins or 10,
             is_available=True,

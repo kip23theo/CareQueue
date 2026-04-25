@@ -8,6 +8,7 @@ class Doctor(TimestampMixin, Document):
     clinic_id: PydanticObjectId
     user_id: PydanticObjectId
     name: str
+    doctor_image: str | None = None
     specialization: str
     avg_consult_mins: int = 10
     is_available: bool = True

@@ -67,6 +67,7 @@ def _serialize_clinic(clinic: Clinic) -> dict[str, Any]:
     return {
         "id": str(clinic.id),
         "name": clinic.name,
+        "clinic_image": clinic.clinic_image,
         "address": clinic.address,
         "phone": clinic.phone,
         "location": clinic.location,
@@ -135,6 +136,7 @@ class RecordPaymentRequest(BaseModel):
 
 class UpdateClinicRequest(BaseModel):
     name: str | None = None
+    clinic_image: str | None = None
     address: str | None = None
     phone: str | None = None
     google_maps_link: str | None = None
@@ -513,6 +515,7 @@ async def get_clinic_doctors(clinic_id: str = Path(..., description="Clinic id")
             "clinic_id": str(doctor.clinic_id),
             "user_id": str(doctor.user_id),
             "name": doctor.name,
+            "doctor_image": doctor.doctor_image,
             "specialization": doctor.specialization,
             "avg_consult_mins": doctor.avg_consult_mins,
             "is_available": doctor.is_available,
@@ -538,6 +541,8 @@ async def update_clinic(
 
     if payload.name is not None:
         clinic.name = payload.name.strip()
+    if payload.clinic_image is not None:
+        clinic.clinic_image = payload.clinic_image.strip() or None
     if payload.address is not None:
         clinic.address = payload.address.strip()
     if payload.phone is not None:

@@ -57,6 +57,7 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
   const clinicLng = clinic.location?.coordinates?.[0]
   const hasCoordinates = Number.isFinite(clinicLat) && Number.isFinite(clinicLng)
   const visibleSpecializations = showMore ? clinic.specializations : clinic.specializations.slice(0, 3)
+  const clinicInitial = clinic.name.trim().charAt(0).toUpperCase() || 'C'
 
   const handleGetDirections = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation()
@@ -104,15 +105,28 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start gap-3">
+        <div className="h-14 w-14 rounded-xl overflow-hidden bg-surface-100 shrink-0 border border-surface-200">
+          {clinic.clinic_image ? (
+            <img src={clinic.clinic_image} alt={clinic.name} className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-sm font-semibold text-surface-500">
+              {clinicInitial}
+            </div>
+          )}
+        </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-surface-900 text-base font-heading truncate">{clinic.name}</h3>
-          <div className="flex items-center gap-1 mt-1 text-sm text-surface-500">
-            <MapPin size={13} />
-            <span className="truncate">{clinic.address}</span>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-surface-900 text-base font-heading truncate">{clinic.name}</h3>
+              <div className="flex items-center gap-1 mt-1 text-sm text-surface-500">
+                <MapPin size={13} />
+                <span className="truncate">{clinic.address}</span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-surface-400 shrink-0 mt-0.5" />
           </div>
         </div>
-        <ChevronRight size={18} className="text-surface-400 shrink-0 mt-0.5" />
       </div>
 
       {/* Specializations */}
