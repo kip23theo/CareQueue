@@ -1,9 +1,16 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.schemas.clinic import ClinicDetailResponse, ClinicListItem, DoctorSummary
+from app.api.schemas.clinic import (
+    ClinicDetailResponse,
+    ClinicListItem,
+    DoctorSummary,
+    QueueTokenResponse,
+)
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
+from app.models.enums import QueueStatus
+from app.models.queue_token import QueueToken
 
 router = APIRouter()
 
@@ -84,6 +91,41 @@ async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
     )
 
 
-@router.get("/{clinic_id}/queue/live")
-async def get_live_queue(clinic_id: str) -> dict[str, list]:
-    return {"queue": []}
+@router.get("/{clinic_id}/queue/live", response_model=list[QueueTokenResponse])
+async def get_live_queue(clinic_id: str) -> list[QueueTokenResponse]:
+    try:
+        clinic_object_id = PydanticObjectId(clinic_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Clinic not found",
+        ) from exc
+
+    clinic = await Clinic.get(clinic_object_id)
+    if clinic is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Clinic not found",
+        )
+
+    active_statuses = [
+        QueueStatus.WAITING,
+        QueueStatus.CALLED,
+        QueueStatus.IN_CONSULTATION,
+        QueueStatus.SKIPPED,
+        QueueStatus.EMERGENCY,
+    ]
+    tokens = await QueueToken.find(
+        QueueToken.clinic_id == clinic_object_id,
+        {"status": {"$in": [queue_status.value for queue_status in active_statuses]}},
+    ).sort("+position").to_list()
+
+    return [
+        QueueTokenResponse(
+            token_number=token.token_number,
+            status=token.status,
+            est_wait_mins=token.est_wait_mins,
+            position=token.position,
+        )
+        for token in tokens
+    ]
