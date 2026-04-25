@@ -7,7 +7,6 @@ import { aiApi } from '@/lib/api-calls'
 import { ClinicCard } from '@/components/ui/ClinicCard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
 import { Send, Bot, User, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 

@@ -5,14 +5,13 @@ import { useQueue } from '@/context/QueueContext'
 import { useToast } from '@/context/ToastContext'
 import { adminQueueApi } from '@/lib/api-calls'
 import { QueueList } from '@/components/queue/QueueList'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
 import { cn, formatTokenDisplay } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { TokenStatus } from '@/types'
 import axios from 'axios'
-import { Search, Filter, RefreshCw } from 'lucide-react'
+import { Search, RefreshCw } from 'lucide-react'
 
 const TABS: { label: string; status: TokenStatus | 'ALL' }[] = [
   { label: 'All', status: 'ALL' },

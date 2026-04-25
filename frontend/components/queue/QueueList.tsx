@@ -1,9 +1,8 @@
 'use client'
 
-import { cn, formatTokenDisplay } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { QueueToken } from '@/types'
 import { TokenCard } from '@/components/ui/TokenCard'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Siren } from 'lucide-react'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { cn, formatWaitTime, formatTime, formatTokenDisplay } from '@/lib/utils'
+import { cn, formatTime, formatTokenDisplay } from '@/lib/utils'
 import type { QueueToken, TokenStatus } from '@/types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { WaitTimeMeter } from '@/components/ui/WaitTimeMeter'
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { connectSSE } from '@/lib/sse'
 import { tokensApi } from '@/lib/api-calls'
-import { Check, Circle, Loader2, Bell, X } from 'lucide-react'
+import { Check, Circle, Loader2 } from 'lucide-react'
 
 interface Props {
   token: QueueToken

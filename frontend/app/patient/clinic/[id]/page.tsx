@@ -176,25 +176,33 @@ export default function ClinicDetailPage() {
           </h2>
           <div className="space-y-2">
             {doctors.map((doc) => (
-              <label
+              <Button
+                type="button"
                 key={doc._id}
+                onClick={() => doc.is_available && setSelectedDoctor(doc._id)}
+                disabled={!doc.is_available}
+                variant="ghost"
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                  'w-full h-auto justify-start flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
                   selectedDoctor === doc._id
                     ? 'border-brand-400 bg-brand-50'
                     : 'border-surface-200 hover:border-surface-300',
                   !doc.is_available && 'opacity-50 cursor-not-allowed'
                 )}
               >
-                <input
-                  type="radio"
-                  name="doctor"
-                  value={doc._id}
-                  checked={selectedDoctor === doc._id}
-                  onChange={() => doc.is_available && setSelectedDoctor(doc._id)}
-                  className="accent-brand-500"
-                  disabled={!doc.is_available}
-                />
+                <span
+                  className={cn(
+                    'inline-flex h-4 w-4 items-center justify-center rounded-full border border-surface-300',
+                    selectedDoctor === doc._id && 'border-brand-500'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'h-2 w-2 rounded-full',
+                      selectedDoctor === doc._id ? 'bg-brand-500' : 'bg-transparent'
+                    )}
+                  />
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-surface-900">{doc.name}</p>
                   <p className="text-xs text-surface-500">{doc.specialization}</p>
@@ -208,7 +216,7 @@ export default function ClinicDetailPage() {
                     Unavailable
                   </Badge>
                 )}
-              </label>
+              </Button>
             ))}
           </div>
         </Card>
