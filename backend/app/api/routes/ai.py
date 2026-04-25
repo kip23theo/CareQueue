@@ -23,8 +23,15 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 
 # ── Request / Response models ─────────────────────────────────────────────────
 
+class Message(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
+    history: list[Message] = []
+
 
 class ChatResponse(BaseModel):
     reply: str
@@ -59,7 +66,11 @@ class PredictWaitResponse(BaseModel):
 async def chat(req: ChatRequest):
     """Patient AI assistant — symptom triage and clinic Q&A."""
     try:
-        reply = await ai_chat(req.message)
+        history_text = "\n".join(
+            f"{m.role}: {m.content}" for m in req.history[-6:]
+        )
+        full_message = f"{history_text}\nuser: {req.message}" if history_text else req.message
+        reply = await ai_chat(full_message)
         return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

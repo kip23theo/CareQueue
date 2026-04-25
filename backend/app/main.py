@@ -27,6 +27,7 @@ from app.models.review import Review
 from app.models.user import User
 
 settings = get_settings()
+allowed_origins = list(dict.fromkeys([*settings.cors_origins, "http://localhost:3000"]))
 
 app = FastAPI(
     title=settings.app_name,
@@ -39,7 +40,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
