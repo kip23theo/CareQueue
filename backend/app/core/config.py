@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     database_name: str = "carequeue"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    cors_allow_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allow_origins.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import os
 import sys
 from datetime import datetime, timezone
@@ -13,11 +14,15 @@ sys.path.append(str(BACKEND_DIR))
 
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
-from app.models.enums import QueueStatus
+from app.models.enums import QueueStatus, UserRole
 from app.models.notification import Notification
 from app.models.queue_token import QueueToken
 from app.models.review import Review
 from app.models.user import User
+
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
 async def seed_data() -> None:
@@ -48,6 +53,7 @@ async def seed_data() -> None:
         await QueueToken.find({"patient_phone": {"$regex": r"^\+91000000"}}).delete()
         await Doctor.find({"name": {"$regex": r"^Demo Dr\."}}).delete()
         await Clinic.find({"phone": {"$regex": r"^\+91110000"}}).delete()
+        await User.find({"email": {"$regex": r"@demo\.carequeue\.local$"}}).delete()
 
         clinics = [
             Clinic(
@@ -91,10 +97,38 @@ async def seed_data() -> None:
             await clinic.insert()
 
         clinic_one, clinic_two, clinic_three = clinics
+        demo_password_hash = hash_password("password123")
+        admin_user = User(
+            clinic_id=clinic_one.id,
+            role=UserRole.ADMIN,
+            name="Demo Admin",
+            email="admin@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        doctor_user = User(
+            clinic_id=clinic_one.id,
+            role=UserRole.DOCTOR,
+            name="Demo Doctor",
+            email="doctor@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        receptionist_user = User(
+            clinic_id=clinic_one.id,
+            role=UserRole.RECEPTIONIST,
+            name="Demo Receptionist",
+            email="receptionist@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        for user in [admin_user, doctor_user, receptionist_user]:
+            await user.insert()
+
         doctors = [
             Doctor(
                 clinic_id=clinic_one.id,
-                user_id=PydanticObjectId(),
+                user_id=doctor_user.id,
                 name="Demo Dr. Priya Sharma",
                 specialization="General Physician",
                 avg_consult_mins=8,
@@ -174,9 +208,14 @@ async def seed_data() -> None:
         print(
             "Seed data inserted: "
             f"{len(clinics)} clinics, {len(doctors)} doctors, "
+            f"3 users, "
             f"{len(queue_tokens)} queue tokens"
         )
         print(f"Primary clinic id: {clinic_one.id}")
+        print("Demo logins:")
+        print("  admin@demo.carequeue.local / password123")
+        print("  doctor@demo.carequeue.local / password123")
+        print("  receptionist@demo.carequeue.local / password123")
     finally:
         client.close()
 
