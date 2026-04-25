@@ -1,6 +1,7 @@
 from beanie import init_beanie
 from fastapi import FastAPI
 
+from app.api.routes.clinics import router as clinics_router
 from app.db.mongodb import close_mongo_connection, connect_to_mongo
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
@@ -14,6 +15,8 @@ app = FastAPI(
     description="Backend starter for the CareQueue project.",
     version="0.1.0",
 )
+
+app.include_router(clinics_router, prefix="/clinics", tags=["clinics"])
 
 
 @app.on_event("startup")
