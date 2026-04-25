@@ -1,4 +1,5 @@
 from beanie import PydanticObjectId
+from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.schemas.clinic import (
@@ -13,6 +14,16 @@ from app.models.enums import QueueStatus
 from app.models.queue_token import QueueToken
 
 router = APIRouter()
+
+
+def _parse_clinic_id(clinic_id: str) -> PydanticObjectId:
+    try:
+        return PydanticObjectId(clinic_id)
+    except (InvalidId, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid clinic_id",
+        ) from exc
 
 
 def _clinic_distance_score(clinic: Clinic, lat: float, lng: float) -> float:
@@ -48,13 +59,7 @@ async def get_nearby_clinics(
 
 @router.get("/{clinic_id}", response_model=ClinicDetailResponse)
 async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
-    try:
-        clinic_object_id = PydanticObjectId(clinic_id)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Clinic not found",
-        ) from exc
+    clinic_object_id = _parse_clinic_id(clinic_id)
 
     clinic = await Clinic.get(clinic_object_id)
     if clinic is None:
@@ -93,13 +98,7 @@ async def get_clinic_detail(clinic_id: str) -> ClinicDetailResponse:
 
 @router.get("/{clinic_id}/queue/live", response_model=list[QueueTokenLiveResponse])
 async def get_live_queue(clinic_id: str) -> list[QueueTokenLiveResponse]:
-    try:
-        clinic_object_id = PydanticObjectId(clinic_id)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Clinic not found",
-        ) from exc
+    clinic_object_id = _parse_clinic_id(clinic_id)
 
     clinic = await Clinic.get(clinic_object_id)
     if clinic is None:
