@@ -41,7 +41,7 @@ export default function AdminQueuePage() {
     }
   }, [success, toastError, refresh])
 
-  const allTokens = [
+  const allTokens = queue?.tokens ?? [
     ...(queue?.current_token ? [queue.current_token] : []),
     ...(queue?.waiting ?? []),
     ...(queue?.called ?? []),
