@@ -66,7 +66,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!user?.clinic_id) return
-    setIsDoctorsLoading(true)
     doctorsApi.getAll(user.clinic_id)
       .then(({ data }) => setDoctors(data))
       .catch(() => setDoctors([]))
