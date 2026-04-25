@@ -8,6 +8,8 @@ import { QueueList } from '@/components/queue/QueueList'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SSEStatusDot } from '@/components/ui/LiveDot'
 import { cn, formatTokenDisplay } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { TokenStatus } from '@/types'
 import axios from 'axios'
 import { Search, Filter, RefreshCw } from 'lucide-react'
@@ -63,25 +65,27 @@ export default function AdminQueuePage() {
         </div>
         <div className="flex items-center gap-3">
           <SSEStatusDot status={sseStatus} showLabel />
-          <button
+          <Button
             onClick={refresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-surface-200 text-sm text-surface-600 hover:bg-surface-50 transition-colors"
+            variant="outline"
+            size="sm"
+            className="h-8 rounded-xl border-surface-200 text-sm text-surface-600 hover:bg-surface-50"
           >
             <RefreshCw size={14} />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Search */}
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400" />
-        <input
+        <Input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or token..."
-          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-surface-200 bg-white text-sm focus:outline-none focus:border-brand-400"
+          className="h-10 rounded-xl border-surface-200 bg-white pl-9 pr-4 text-sm"
         />
       </div>
 
@@ -92,11 +96,13 @@ export default function AdminQueuePage() {
             ? allTokens.length
             : allTokens.filter((t) => t.status === tab.status).length
           return (
-            <button
+            <Button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
+              size="sm"
+              variant={activeTab === tab.status ? 'default' : 'outline'}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
+                'items-center gap-1.5 h-8 px-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all shrink-0',
                 activeTab === tab.status
                   ? 'bg-brand-500 text-white shadow-sm'
                   : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300'
@@ -109,7 +115,7 @@ export default function AdminQueuePage() {
               )}>
                 {count}
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

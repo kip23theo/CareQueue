@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { clinicAdminApi } from '@/lib/api-calls'
 import { getUser } from '@/lib/auth'
-import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import type { ClinicAnalytics } from '@/types'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import {
   Users, Clock, CheckCircle2, UserX,
   ArrowRight, ToggleLeft, ToggleRight, TrendingUp
@@ -19,21 +20,20 @@ function StatCard({ label, value, sub, icon, color }: {
   icon: React.ReactNode; color: string
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+    <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
       <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', color)}>
         {icon}
       </div>
       <p className="text-3xl font-bold font-heading text-surface-900">{value}</p>
       <p className="text-sm text-surface-500 mt-1">{label}</p>
       {sub && <p className="text-xs text-surface-400 mt-0.5">{sub}</p>}
-    </div>
+    </Card>
   )
 }
 
 export default function AdminDashboard() {
   const user = getUser()
-  const { queue, isLoading } = useQueue()
-  const { success, error: toastError } = useToast()
+  const { queue } = useQueue()
   const [analytics, setAnalytics] = useState<ClinicAnalytics | null>(null)
   const [isOpen, setIsOpen] = useState(true)
 
@@ -82,18 +82,18 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold font-heading text-surface-900">Dashboard</h1>
-          <p className="text-surface-500 text-sm mt-0.5">Today's clinic overview</p>
+          <p className="text-surface-500 text-sm mt-0.5">Today&apos;s clinic overview</p>
         </div>
-        <button
+        <Button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all',
+            'flex items-center gap-2 h-10 px-4 rounded-xl font-semibold text-sm transition-all',
             isOpen ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-surface-200 text-surface-600 hover:bg-surface-300'
           )}
         >
           {isOpen ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
           Clinic {isOpen ? 'Open' : 'Closed'}
-        </button>
+        </Button>
       </div>
 
       {/* Stat cards */}
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
 
       {/* Charts */}
       {hourlyData.length > 0 && (
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 mb-6 shadow-sm">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 mb-6 shadow-sm">
           <h2 className="font-semibold font-heading text-surface-900 mb-4 flex items-center gap-2">
             <TrendingUp size={16} className="text-brand-500" />
             Hourly Throughput
@@ -121,25 +121,31 @@ export default function AdminDashboard() {
               <Bar dataKey="patients" fill="#14b8a6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
       )}
 
       {/* Quick action cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
-          { href: '/admin/queue', label: 'Manage Live Queue', desc: `${queue?.waiting.length ?? 0} patients waiting`, color: 'bg-brand-500' },
-          { href: '/admin/doctors', label: 'View Doctors', desc: 'Manage availability & delays', color: 'bg-blue-500' },
-          { href: '/admin/analytics', label: 'Analytics', desc: 'Performance metrics & trends', color: 'bg-purple-500' },
-          { href: '/admin/settings', label: 'Clinic Settings', desc: 'Profile & opening hours', color: 'bg-surface-700' },
+          { href: '/admin/queue', label: 'Manage Live Queue', desc: `${queue?.waiting.length ?? 0} patients waiting` },
+          { href: '/admin/doctors', label: 'View Doctors', desc: 'Manage availability & delays' },
+          { href: '/admin/analytics', label: 'Analytics', desc: 'Performance metrics & trends' },
+          { href: '/admin/settings', label: 'Clinic Settings', desc: 'Profile & opening hours' },
         ].map((item) => (
-          <Link key={item.href} href={item.href}
-            className="bg-white rounded-2xl border border-surface-200 p-5 flex items-center justify-between hover:shadow-md hover:border-brand-200 transition-all group shadow-sm">
-            <div>
-              <p className="font-semibold text-surface-900 font-heading">{item.label}</p>
-              <p className="text-sm text-surface-500 mt-0.5">{item.desc}</p>
-            </div>
-            <ArrowRight size={18} className="text-surface-400 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
-          </Link>
+          <Button
+            key={item.href}
+            asChild
+            variant="outline"
+            className="h-auto bg-white rounded-2xl border border-surface-200 p-5 flex items-center justify-between hover:shadow-md hover:border-brand-200 transition-all group shadow-sm"
+          >
+            <Link href={item.href}>
+              <div className="text-left">
+                <p className="font-semibold text-surface-900 font-heading">{item.label}</p>
+                <p className="text-sm text-surface-500 mt-0.5">{item.desc}</p>
+              </div>
+              <ArrowRight size={18} className="text-surface-400 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          </Button>
         ))}
       </div>
     </div>

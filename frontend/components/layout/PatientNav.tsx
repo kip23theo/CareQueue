@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { ArrowLeft, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   myTokenId?: string
@@ -22,35 +23,39 @@ export function PatientNav({ myTokenId }: Props) {
         {/* Left: back or logo */}
         <div className="flex items-center gap-3">
           {showBack ? (
-            <button
+            <Button
               onClick={() => router.back()}
-              className="flex items-center gap-1.5 text-sm text-surface-600 hover:text-surface-900 transition-colors"
+              variant="ghost"
+              size="sm"
+              className="h-auto px-0 text-sm text-surface-600 hover:text-surface-900"
             >
               <ArrowLeft size={18} />
               Back
-            </button>
+            </Button>
           ) : (
             <Link href="/patient" className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center">
                 <Activity size={14} className="text-white" />
               </div>
-              <span className="font-bold text-surface-900 font-heading text-sm">ClinicFlow</span>
+              <span className="font-bold text-surface-900 font-heading text-sm">CareQueue</span>
             </Link>
           )}
         </div>
 
         {/* Right: My Token shortcut */}
         {myTokenId && (
-          <Link
-            href={`/patient/token/${myTokenId}`}
+          <Button
+            asChild
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold',
-              'bg-brand-500 text-white hover:bg-brand-600 transition-colors shadow-sm'
+              'h-8 rounded-full text-xs font-semibold',
+              'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
             )}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-            My Token
-          </Link>
+            <Link href={`/patient/token/${myTokenId}`}>
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              My Token
+            </Link>
+          </Button>
         )}
       </div>
     </nav>

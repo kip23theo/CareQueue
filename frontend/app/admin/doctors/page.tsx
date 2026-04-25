@@ -5,6 +5,9 @@ import { getUser } from '@/lib/auth'
 import { doctorsApi } from '@/lib/api-calls'
 import { useToast } from '@/context/ToastContext'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import type { Doctor } from '@/types'
 import axios from 'axios'
 import { Stethoscope, CheckCircle2, Clock, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
@@ -78,7 +81,7 @@ export default function AdminDoctorsPage() {
             const currentDelay = delayEditing[doc._id] ?? doc.delay_mins
             const isUpdating = updatingId === doc._id
             return (
-              <div key={doc._id} className={cn(
+              <Card key={doc._id} className={cn(
                 'bg-white rounded-2xl border border-surface-200 p-5 shadow-sm transition-all',
                 doc.is_available ? 'border-l-4 border-l-green-400' : 'border-l-4 border-l-surface-300'
               )}>
@@ -109,11 +112,11 @@ export default function AdminDoctorsPage() {
 
                   {/* Availability toggle */}
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <button
+                    <Button
                       onClick={() => handleToggleAvailability(doc)}
                       disabled={isUpdating}
                       className={cn(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all',
+                        'h-8 items-center gap-1.5 px-3 rounded-xl text-xs font-semibold transition-all',
                         doc.is_available
                           ? 'bg-green-500 text-white hover:bg-green-600'
                           : 'bg-surface-200 text-surface-600 hover:bg-surface-300',
@@ -125,7 +128,7 @@ export default function AdminDoctorsPage() {
                         : doc.is_available ? <ToggleRight size={14} /> : <ToggleLeft size={14} />
                       }
                       {doc.is_available ? 'Available' : 'Unavailable'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -133,7 +136,7 @@ export default function AdminDoctorsPage() {
                 <div className="flex items-center gap-3 mt-4 pt-4 border-t border-surface-100">
                   <Clock size={14} className="text-amber-500 shrink-0" />
                   <span className="text-sm text-surface-600">Running late by</span>
-                  <input
+                  <Input
                     type="number"
                     min="0"
                     max="60"
@@ -141,20 +144,21 @@ export default function AdminDoctorsPage() {
                     onChange={(e) =>
                       setDelayEditing((prev) => ({ ...prev, [doc._id]: Number(e.target.value) }))
                     }
-                    className="w-16 px-2 py-1 rounded-lg border border-surface-200 text-center text-sm font-bold focus:outline-none focus:border-brand-400"
+                    className="h-8 w-16 rounded-lg border-surface-200 px-2 py-1 text-center text-sm font-bold"
                   />
                   <span className="text-sm text-surface-600">min</span>
                   {delayEditing[doc._id] !== undefined && delayEditing[doc._id] !== doc.delay_mins && (
-                    <button
+                    <Button
                       onClick={() => handleSaveDelay(doc)}
                       disabled={isUpdating}
-                      className="ml-auto px-3 py-1 rounded-lg bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors disabled:opacity-50"
+                      size="sm"
+                      className="ml-auto h-7 px-3 rounded-lg bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 disabled:opacity-50"
                     >
                       Save
-                    </button>
+                    </Button>
                   )}
                 </div>
-              </div>
+              </Card>
             )
           })}
         </div>

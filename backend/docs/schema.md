@@ -1,4 +1,4 @@
-# ClinicFlow MongoDB Schema
+# CareQueue MongoDB Schema
 
 ## `clinics`
 

@@ -24,26 +24,25 @@ FastAPI backend starter for CareQueue.
    cp .env.example .env
    ```
 
+   Then set `PORT` in `backend/.env` if you want to run on a custom port.
+
 4. Run the development server:
 
    ```bash
-   uvicorn app.main:app --reload
+   python -m app.main
    ```
 
 5. Open the API docs:
 
    ```text
-   http://127.0.0.1:8000/docs
+   http://127.0.0.1:<PORT>/docs
    ```
 
-## MongoDB ODM Setup
+## Shared Database
 
-Initialize Beanie models and MongoDB indexes:
-
-```bash
-cd backend
-python scripts/init_db.py
-```
+The backend uses the shared MongoDB Atlas database from `backend/.env`.
+Do not run database init or seed scripts during normal setup unless the backend owner asks.
+See the runbook for the current team workflow.
 
 ## Documentation
 

@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePatient } from '@/context/PatientContext'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { MapPin, Loader2, Zap, Clock, Smartphone } from 'lucide-react'
 
 const CITY_PRESETS = [
@@ -52,10 +54,10 @@ export default function PatientHome() {
       <div className="max-w-md w-full text-center">
         {/* Hero */}
         <div className="mb-10 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold mb-6">
+          <Badge className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100 text-brand-700 text-xs font-semibold mb-6 border-transparent">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
             Real-time Queue Management
-          </div>
+          </Badge>
           <h1 className="text-4xl font-bold font-heading text-surface-900 leading-tight mb-3">
             Find a clinic<br />near you
           </h1>
@@ -66,15 +68,15 @@ export default function PatientHome() {
 
         {/* Location CTA */}
         <div className="space-y-3 animate-slide-up mb-8">
-          <button
+          <Button
             id="use-location-btn"
             onClick={handleUseLocation}
             disabled={isLocating}
             className={cn(
-              'w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl',
+              'w-full h-14 flex items-center justify-center gap-2.5 rounded-2xl',
               'bg-brand-500 text-white font-semibold text-base',
               'hover:bg-brand-600 active:scale-[0.98] transition-all shadow-lg shadow-brand-500/25',
-              'disabled:opacity-70 disabled:cursor-not-allowed'
+              'disabled:opacity-70'
             )}
           >
             {isLocating ? (
@@ -82,7 +84,7 @@ export default function PatientHome() {
             ) : (
               <><MapPin size={20} /> Use my location</>
             )}
-          </button>
+          </Button>
 
           {locationError && (
             <p className="text-sm text-red-600 text-center">{locationError}</p>
@@ -96,18 +98,19 @@ export default function PatientHome() {
 
           <div className="grid grid-cols-2 gap-2">
             {CITY_PRESETS.map((city) => (
-              <button
+              <Button
                 key={city.name}
                 onClick={() => handleCitySelect(city)}
+                variant="outline"
                 className={cn(
-                  'py-2.5 rounded-xl border border-surface-200 bg-white',
+                  'h-10 rounded-xl border-surface-200 bg-white',
                   'text-sm font-medium text-surface-700',
                   'hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700',
                   'transition-all'
                 )}
               >
                 {city.name}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -115,13 +118,14 @@ export default function PatientHome() {
         {/* Feature pills */}
         <div className="flex flex-wrap justify-center gap-2 animate-fade-in">
           {features.map((f) => (
-            <span
+            <Badge
               key={f.label}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-surface-200 text-xs text-surface-600 font-medium"
+              variant="outline"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border-surface-200 text-xs text-surface-600 font-medium"
             >
               <span className="text-brand-500">{f.icon}</span>
               {f.label}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>

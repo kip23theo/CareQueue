@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { Progress } from '@/components/ui/progress'
 
 interface Props {
   waitMins: number
@@ -72,9 +73,9 @@ interface LinearProps {
 export function WaitTimeBar({ waitMins, maxMins = 60 }: LinearProps) {
   const pct = Math.min((waitMins / maxMins) * 100, 100)
   const color =
-    waitMins < 15 ? 'bg-green-500' :
-    waitMins < 30 ? 'bg-amber-500' :
-    'bg-red-500'
+    waitMins < 15 ? '[&>[data-slot=progress-indicator]]:bg-green-500' :
+    waitMins < 30 ? '[&>[data-slot=progress-indicator]]:bg-amber-500' :
+    '[&>[data-slot=progress-indicator]]:bg-red-500'
 
   return (
     <div className="w-full">
@@ -82,12 +83,7 @@ export function WaitTimeBar({ waitMins, maxMins = 60 }: LinearProps) {
         <span>Wait time</span>
         <span className="font-medium">{waitMins < 1 ? '<1' : Math.round(waitMins)} min</span>
       </div>
-      <div className="h-2 rounded-full bg-surface-200 overflow-hidden">
-        <div
-          className={cn('h-full rounded-full transition-all duration-700', color)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <Progress value={pct} className={cn('h-2 bg-surface-200', color)} />
     </div>
   )
 }

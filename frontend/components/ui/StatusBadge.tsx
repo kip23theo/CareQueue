@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import type { TokenStatus } from '@/types'
+import { Badge } from '@/components/ui/badge'
 import {
   Clock, PhoneCall, Stethoscope, CheckCircle2,
   SkipForward, XCircle, Siren, UserX
@@ -80,10 +81,10 @@ export function StatusBadge({ status, size = 'md', pulsing }: Props) {
   const isPulsing = pulsing ?? (status === 'CALLED' || status === 'EMERGENCY')
 
   return (
-    <span
+    <Badge
       className={cn(
-        'inline-flex items-center rounded-full border font-medium',
-        'transition-all duration-300',
+        'rounded-full border font-medium',
+        'transition-all duration-300 px-0',
         config.pill,
         sizeClasses[size]
       )}
@@ -98,6 +99,6 @@ export function StatusBadge({ status, size = 'md', pulsing }: Props) {
       />
       {config.icon}
       {config.label}
-    </span>
+    </Badge>
   )
 }

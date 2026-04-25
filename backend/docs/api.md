@@ -1,4 +1,4 @@
-# ClinicFlow Backend API Documentation
+# CareQueue Backend API Documentation
 
 ## Auth
 

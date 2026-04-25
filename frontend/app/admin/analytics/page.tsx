@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import { getUser } from '@/lib/auth'
 import { clinicAdminApi } from '@/lib/api-calls'
 import type { ClinicAnalytics } from '@/types'
-import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, PieChart, Pie, Cell, Legend
+  CartesianGrid, PieChart, Pie, Cell
 } from 'recharts'
-import { BarChart3, Calendar, TrendingUp, Loader2 } from 'lucide-react'
+import { BarChart3, Calendar, TrendingUp } from 'lucide-react'
 
 const COLORS = ['#14b8a6', '#f59e0b', '#ef4444', '#94a3b8']
 
@@ -21,7 +22,6 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (!user?.clinic_id) return
-    setIsLoading(true)
     clinicAdminApi.getAnalytics(user.clinic_id, selectedDate)
       .then(({ data }) => setAnalytics(data))
       .catch(() => {})
@@ -61,12 +61,15 @@ export default function AdminAnalyticsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Calendar size={16} className="text-surface-400" />
-          <input
+          <Input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => {
+              setIsLoading(true)
+              setSelectedDate(e.target.value)
+            }}
             max={new Date().toISOString().split('T')[0]}
-            className="px-3 py-2 rounded-xl border border-surface-200 text-sm focus:outline-none focus:border-brand-400 bg-white"
+            className="h-10 w-40 rounded-xl border-surface-200 text-sm bg-white"
           />
         </div>
       </div>
@@ -88,15 +91,15 @@ export default function AdminAnalyticsPage() {
           {/* Stat cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {statCards.map((s) => (
-              <div key={s.label} className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm">
+              <Card key={s.label} className="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm">
                 <p className="text-xs text-surface-500 mb-1">{s.label}</p>
                 <p className="text-2xl font-bold font-heading text-surface-900">{s.value}</p>
-              </div>
+              </Card>
             ))}
           </div>
 
           {/* Hourly throughput */}
-          <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+          <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
             <h2 className="font-semibold font-heading text-surface-900 mb-4 flex items-center gap-2">
               <TrendingUp size={16} className="text-brand-500" />
               Hourly Patient Throughput
@@ -110,11 +113,11 @@ export default function AdminAnalyticsPage() {
                 <Bar dataKey="patients" fill="#14b8a6" radius={[4, 4, 0, 0]} name="Patients" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </Card>
 
           {/* Pie chart */}
           {pieData.length > 0 && (
-            <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+            <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
               <h2 className="font-semibold font-heading text-surface-900 mb-4">Status Distribution</h2>
               <div className="flex items-center gap-8">
                 <ResponsiveContainer width={180} height={180}>
@@ -138,7 +141,7 @@ export default function AdminAnalyticsPage() {
                   ))}
                 </div>
               </div>
-            </div>
+            </Card>
           )}
         </div>
       )}

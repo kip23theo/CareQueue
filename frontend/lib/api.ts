@@ -11,7 +11,7 @@ export const api = axios.create({
 // Attach JWT token to every request if present
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('cf_token')
+    const token = localStorage.getItem('carequeue_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
   }
   return config
@@ -22,8 +22,8 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('cf_token')
-      localStorage.removeItem('cf_user')
+      localStorage.removeItem('carequeue_token')
+      localStorage.removeItem('carequeue_user')
       window.location.href = '/auth/login'
     }
     return Promise.reject(err)

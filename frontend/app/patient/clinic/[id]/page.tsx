@@ -7,6 +7,12 @@ import { usePatient } from '@/context/PatientContext'
 import { useToast } from '@/context/ToastContext'
 import { WaitTimeMeter } from '@/components/ui/WaitTimeMeter'
 import { cn, formatWaitTime } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import type { Clinic, Doctor } from '@/types'
 import axios from 'axios'
 import { MapPin, Phone, Star, Clock, Users, Loader2, Stethoscope } from 'lucide-react'
@@ -97,7 +103,7 @@ export default function ClinicDetailPage() {
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
       {/* Hero */}
-      <div className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
+      <Card className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
         <div className="flex items-start justify-between mb-3">
           <div>
             <h1 className="text-2xl font-bold font-heading text-surface-900">{clinic.name}</h1>
@@ -106,14 +112,14 @@ export default function ClinicDetailPage() {
               {clinic.address}
             </div>
           </div>
-          <span className={cn(
+          <Badge className={cn(
             'px-2.5 py-1 rounded-full text-xs font-semibold',
             clinic.is_open
               ? 'bg-green-100 text-green-700'
               : 'bg-red-100 text-red-600'
           )}>
             {clinic.is_open ? 'Open' : 'Closed'}
-          </span>
+          </Badge>
         </div>
 
         <div className="flex items-center gap-2 mb-4 text-sm text-surface-600">
@@ -142,27 +148,28 @@ export default function ClinicDetailPage() {
             <WaitTimeMeter waitMins={clinic.est_wait_mins ?? 0} size="sm" />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Already in queue */}
       {existingToken && (
-        <div className="bg-brand-50 border border-brand-200 rounded-2xl p-4 flex items-center justify-between">
+        <Card className="bg-brand-50 border border-brand-200 rounded-2xl p-4 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-brand-700">You already have a token</p>
             <p className="text-xs text-brand-600 mt-0.5">Token #{existingToken.token_display}</p>
           </div>
-          <button
+          <Button
             onClick={() => router.push(`/patient/token/${existingToken._id}`)}
-            className="px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600 transition-colors"
+            size="sm"
+            className="h-9 px-4 rounded-xl bg-brand-500 text-white text-sm font-semibold hover:bg-brand-600"
           >
             Track
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
 
       {/* Doctor selector */}
       {doctors.length > 0 && (
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
           <h2 className="font-semibold text-surface-900 font-heading mb-3 flex items-center gap-2">
             <Stethoscope size={16} className="text-brand-500" />
             Select Doctor
@@ -193,51 +200,51 @@ export default function ClinicDetailPage() {
                   <p className="text-xs text-surface-500">{doc.specialization}</p>
                 </div>
                 {doc.is_available ? (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                  <Badge className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium border-transparent">
                     Available
-                  </span>
+                  </Badge>
                 ) : (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-surface-500">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-full bg-surface-100 text-surface-500 border-transparent">
                     Unavailable
-                  </span>
+                  </Badge>
                 )}
               </label>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Join form */}
       {!existingToken && clinic.is_open && (
-        <div className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm">
           <h2 className="font-semibold text-surface-900 font-heading mb-4">Join Queue</h2>
           <form onSubmit={handleJoin} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-surface-600 mb-1.5">Full Name *</label>
-                <input
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Full Name *</Label>
+                <Input
                   required
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className="w-full px-3 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
+                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1.5">Phone *</label>
-                <input
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Phone *</Label>
+                <Input
                   required
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
+                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-surface-600 mb-1.5">Age *</label>
-                <input
+                <Label className="block text-xs font-medium text-surface-600 mb-1.5">Age *</Label>
+                <Input
                   required
                   type="number"
                   min="0"
@@ -245,57 +252,59 @@ export default function ClinicDetailPage() {
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
                   placeholder="25"
-                  className="w-full px-3 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
+                  className="h-10 rounded-xl border-surface-200 bg-surface-50 px-3 text-sm"
                 />
               </div>
             </div>
 
             {/* Gender */}
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Gender</label>
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Gender</Label>
               <div className="flex gap-2">
                 {(['male', 'female', 'other'] as const).map((g) => (
-                  <button
+                  <Button
                     key={g}
                     type="button"
                     onClick={() => setGender(gender === g ? '' : g)}
+                    variant={gender === g ? 'default' : 'outline'}
+                    size="sm"
                     className={cn(
-                      'flex-1 py-2 rounded-xl border text-xs font-medium capitalize transition-all',
+                      'flex-1 h-9 rounded-xl text-xs font-medium capitalize transition-all',
                       gender === g
                         ? 'border-brand-400 bg-brand-50 text-brand-700'
                         : 'border-surface-200 text-surface-600 hover:border-surface-300'
                     )}
                   >
                     {g}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-surface-600 mb-1.5">Symptoms (optional)</label>
-              <textarea
+              <Label className="block text-xs font-medium text-surface-600 mb-1.5">Symptoms (optional)</Label>
+              <Textarea
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
                 placeholder="Describe your symptoms..."
                 rows={3}
-                className="w-full px-3 py-2.5 rounded-xl border border-surface-200 bg-surface-50 text-sm focus:outline-none focus:border-brand-400 focus:bg-white transition-all resize-none"
+                className="rounded-xl border-surface-200 bg-surface-50 px-3 py-2.5 text-sm resize-none"
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={isJoining}
-              className="w-full py-3.5 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25"
+              className="w-full h-12 rounded-xl bg-brand-500 text-white font-semibold hover:bg-brand-600 flex items-center justify-center gap-2 shadow-sm shadow-brand-500/25"
             >
               {isJoining ? (
                 <><Loader2 size={18} className="animate-spin" /> Joining...</>
               ) : (
                 'Join Queue'
               )}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
       )}
     </div>
   )

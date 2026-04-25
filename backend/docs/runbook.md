@@ -1,4 +1,4 @@
-# ClinicFlow Backend Runbook
+# CareQueue Backend Runbook
 
 Use this guide to set up and run the FastAPI backend locally.
 
@@ -38,11 +38,13 @@ cp .env.example .env
 Update `backend/.env`:
 
 ```env
-APP_NAME="ClinicFlow Backend"
+APP_NAME="CareQueue Backend"
 ENV="development"
+PORT=8000
 MONGODB_URI="<shared MongoDB URI>"
 DATABASE_NAME="carequeue"
-ANTHROPIC_API_KEY="<optional for now>"
+OPENAI_API_KEY="<your OpenAI API key>"
+OPENAI_MODEL="gpt-4o-mini"
 ```
 
 Never commit `backend/.env`. It contains secrets and is ignored by git.
@@ -50,19 +52,19 @@ Never commit `backend/.env`. It contains secrets and is ignored by git.
 ## 5. Run Backend Server
 
 ```bash
-uvicorn app.main:app --reload
+python -m app.main
 ```
 
 Server URL:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:<PORT>
 ```
 
 Swagger docs:
 
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:<PORT>/docs
 ```
 
 Every new backend endpoint should include Swagger metadata when it is added:

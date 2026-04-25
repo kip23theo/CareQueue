@@ -1,5 +1,5 @@
 """
-ClinicFlow AI Service — OpenAI Integration
+CareQueue AI Service - OpenAI Integration
 Drop this file into: backend/app/services/ai_service.py
 """
 
@@ -10,8 +10,15 @@ from typing import Optional
 
 # ── Client ────────────────────────────────────────────────────────────────────
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
+def get_openai_client() -> AsyncOpenAI:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
+
+    return AsyncOpenAI(api_key=api_key)
 
 
 # ── 1. /ai/chat  — Patient assistant ─────────────────────────────────────────
@@ -22,7 +29,7 @@ async def ai_chat(message: str, clinic_context: Optional[dict] = None) -> str:
     Pass clinic_context (name, is_open, est_wait_mins) if you have it.
     """
     system = (
-        "You are a helpful medical assistant for ClinicFlow, a clinic queue app. "
+        "You are a helpful medical assistant for CareQueue, a clinic queue app. "
         "Help patients understand wait times, triage symptoms (non-emergency only), "
         "and decide which clinic to visit. Always recommend seeing a doctor for any "
         "serious or emergency symptoms. Keep replies concise and friendly."
@@ -31,6 +38,7 @@ async def ai_chat(message: str, clinic_context: Optional[dict] = None) -> str:
     if clinic_context:
         system += f"\n\nClinic info: {json.dumps(clinic_context)}"
 
+    client = get_openai_client()
     response = await client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -50,6 +58,7 @@ async def ai_parse_patient(text: str) -> dict:
     Convert natural language like "Add Rahul 25 fever headache"
     into {"name": "Rahul", "age": 25, "symptoms": "fever, headache"}.
     """
+    client = get_openai_client()
     response = await client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -88,6 +97,7 @@ async def ai_recommend_clinics(
     """
     clinics_summary = json.dumps(nearby_clinics, indent=2)
 
+    client = get_openai_client()
     response = await client.chat.completions.create(
         model=MODEL,
         messages=[
@@ -142,6 +152,7 @@ async def ai_predict_wait(
 
     tokens_summary = json.dumps(waiting, indent=2)
 
+    client = get_openai_client()
     response = await client.chat.completions.create(
         model=MODEL,
         messages=[

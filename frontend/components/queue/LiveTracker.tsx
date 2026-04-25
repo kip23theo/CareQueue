@@ -6,6 +6,8 @@ import type { QueueToken, TokenStatus } from '@/types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { WaitTimeMeter } from '@/components/ui/WaitTimeMeter'
 import { LiveDot } from '@/components/ui/LiveDot'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { connectSSE } from '@/lib/sse'
 import { tokensApi } from '@/lib/api-calls'
 import { Check, Circle, Loader2, Bell, X } from 'lucide-react'
@@ -129,14 +131,14 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
       <div className="flex-1 max-w-lg mx-auto w-full px-4 py-6 space-y-6">
         {/* CALLED alert */}
         {isCalled && !isCompleted && (
-          <div className="rounded-2xl bg-amber-500 text-white p-5 text-center animate-slide-up shadow-lg">
+          <Card className="rounded-2xl bg-amber-500 text-white p-5 text-center animate-slide-up shadow-lg border-amber-500">
             <p className="text-2xl font-bold font-heading mb-1">🔔 Your turn!</p>
             <p className="text-amber-100">Please proceed to the doctor now.</p>
-          </div>
+          </Card>
         )}
 
         {/* Token number + status */}
-        <div className="bg-white rounded-2xl border-2 border-surface-200 p-6 text-center">
+        <Card className="bg-white rounded-2xl border-2 border-surface-200 p-6 text-center">
           <p className="text-xs uppercase tracking-widest text-surface-400 mb-2">Token Number</p>
           <p className={cn(
             'text-7xl font-bold font-heading leading-none mb-4',
@@ -145,7 +147,7 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
             {token.token_display || formatTokenDisplay(token.token_number)}
           </p>
           <StatusBadge status={token.status} size="lg" />
-        </div>
+        </Card>
 
         {/* Position + ETA */}
         {!isCompleted && !isCancelled && (
@@ -165,15 +167,15 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
         )}
 
         {isCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
+          <Card className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
             <p className="text-4xl mb-2">✅</p>
             <p className="text-lg font-bold text-green-700 font-heading">Consultation Complete</p>
             <p className="text-green-600 text-sm mt-1">Thank you for visiting!</p>
-          </div>
+          </Card>
         )}
 
         {/* Timeline */}
-        <div className="bg-white rounded-2xl border border-surface-200 p-5">
+        <Card className="bg-white rounded-2xl border border-surface-200 p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-surface-500 mb-4">Progress</p>
           <div className="space-y-0">
             {timeline.map((step, i) => (
@@ -214,21 +216,22 @@ export function LiveTracker({ token: initialToken, clinicName }: Props) {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Cancel button */}
         {!isCompleted && !isCancelled && (
-          <button
+          <Button
             onClick={async () => {
               if (confirm('Cancel your token?')) {
                 await tokensApi.cancel(token._id)
                 fetchStatus()
               }
             }}
-            className="w-full py-3 rounded-xl border-2 border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-colors"
+            variant="outline"
+            className="w-full h-11 rounded-xl border-2 border-red-200 text-red-600 hover:bg-red-50"
           >
             Cancel My Token
-          </button>
+          </Button>
         )}
       </div>
     </div>
