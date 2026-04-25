@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Sans, Inter } from 'next/font/google'
+import { SonnerProvider } from '@/components/providers/SonnerProvider'
 import AICopilotMount from '@/components/ai/AICopilotMount'
 import './globals.css'
 
@@ -27,10 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className={`min-h-full flex flex-col antialiased ${dmSans.variable} ${inter.variable}`}>
-        {children}
-        <AICopilotMount />
-      </body>
+      <body className={`min-h-full flex flex-col antialiased ${dmSans.variable} ${inter.variable}`}>{children}</body>
     </html>
   )
 }

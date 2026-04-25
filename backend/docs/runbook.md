@@ -29,6 +29,8 @@ If `python3` is not available, use the Python command available on your machine.
 pip install -r requirements.txt
 ```
 
+This installs: beanie, email-validator, fastapi, motor, pydantic-settings, python-dotenv, uvicorn, openai.
+
 ## 4. Create Local Env File
 
 ```bash
@@ -45,6 +47,7 @@ MONGODB_URI="<shared MongoDB URI>"
 DATABASE_NAME="carequeue"
 OPENAI_API_KEY="<your OpenAI API key>"
 OPENAI_MODEL="gpt-4o-mini"
+CORS_ALLOW_ORIGINS="http://localhost:3000"
 ```
 
 Never commit `backend/.env`. It contains secrets and is ignored by git.
@@ -75,7 +78,13 @@ Every new backend endpoint should include Swagger metadata when it is added:
 - important `responses`
 - query/path parameter descriptions
 
-## 6. Test Main Clinic Endpoints
+## 6. Test Key Endpoints
+
+Health check:
+
+```text
+GET /health
+```
 
 Nearby clinics:
 
@@ -95,18 +104,53 @@ Live clinic queue:
 GET /clinics/{clinic_id}/queue/live
 ```
 
-Health check:
+Join queue:
 
 ```text
-GET /health
+POST /tokens/join
+Body: {"clinic_id": "...", "patient_name": "Test", "patient_phone": "+919999999999"}
+```
+
+Token status:
+
+```text
+GET /tokens/{token_id}/status
+```
+
+Cancel token:
+
+```text
+PATCH /tokens/{token_id}/cancel
+```
+
+Admin queue:
+
+```text
+GET /admin/queue?clinic_id=...
 ```
 
 ## Expected Validation Behavior
 
 - Invalid ObjectId format returns `400`
-- Valid ObjectId with no clinic returns `404`
+- Valid ObjectId with no matching document returns `404`
 - Empty data returns an empty list
-- ObjectIds are returned as strings
+- ObjectIds are returned as strings in all responses
+- `doctor_id` returns `null` (not `"None"`) when unset
+
+## Route Prefixes
+
+| Prefix | Tag | Purpose |
+| --- | --- | --- |
+| `/auth` | auth | Login, registration, token refresh |
+| `/clinics` | clinics | Patient-facing clinic discovery |
+| `/tokens` | tokens | Patient queue token operations |
+| `/doctors` | doctors | Doctor queue and settings |
+| `/admin` | admin | Staff queue management and clinic admin |
+| `/super-admin` | super-admin | Platform-level clinic verification |
+| `/patients` | patients | Patient dashboard and medical records |
+| `/notifications` | notifications | Notification log and send |
+| `/reviews` | reviews | Clinic and doctor reviews |
+| `/ai` | ai | AI chat, parse, recommend, predict |
 
 ## Database Maintenance
 
@@ -119,7 +163,22 @@ python scripts/init_db.py
 python scripts/seed_data.py
 ```
 
-`seed_data.py` changes shared demo data, so coordinate before running it.
+`seed_data.py` prints all generated IDs (clinics, doctors, tokens) for Swagger testing. It deletes existing demo data before inserting fresh records.
+
+Demo logins after seeding:
+
+```text
+superadmin@gmail.com / password123 -> /super-admin
+admin@gmail.com / password123 -> /admin
+doctor@gmail.com / password123 -> /doctor
+receptionist@gmail.com / password123 -> /receptionist
+admin2@gmail.com / password123 -> /admin
+doctor2@gmail.com / password123 -> /doctor
+receptionist2@gmail.com / password123 -> /receptionist
+patient@gmail.com / password123 -> /patient/dashboard
+```
+
+Note: Seeded clinics have `verification_status: pending` by default. To test staff login, either approve the clinic via super admin endpoint or update the DB directly.
 
 ## Git Rules
 

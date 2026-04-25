@@ -108,6 +108,7 @@ function toLiveQueue(raw: unknown): LiveQueue {
     return {
       clinic_id: q.clinic_id ?? q.id ?? '',
       date: q.date ?? new Date().toISOString().slice(0, 10),
+      tokens,
       current_token: tokens.find((t) => t.status === 'IN_CONSULTATION') ?? null,
       waiting: tokens.filter((t) => t.status === 'WAITING'),
       called: tokens.filter((t) => t.status === 'CALLED'),
@@ -146,6 +147,11 @@ function toLiveQueue(raw: unknown): LiveQueue {
   return {
     clinic_id: q.clinic_id ?? q.id ?? '',
     date: q.date ?? new Date().toISOString().slice(0, 10),
+    tokens: [
+      ...(currentToken ? [currentToken] : []),
+      ...waiting,
+      ...called,
+    ],
     current_token: currentToken,
     waiting,
     called,

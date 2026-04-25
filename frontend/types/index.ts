@@ -190,6 +190,7 @@ export interface AddWalkinRequest {
 export interface LiveQueue {
   clinic_id: string
   date: string
+  tokens?: QueueToken[]
   current_token: QueueToken | null
   waiting: QueueToken[]
   called: QueueToken[]

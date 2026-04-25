@@ -1,48 +1,90 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { authApi } from '@/lib/api-calls'
-import { saveAuth } from '@/lib/auth'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import axios from 'axios'
-import { Eye, EyeOff, Activity, Loader2 } from 'lucide-react'
-import Link from 'next/link'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { authApi } from "@/lib/api-calls";
+import { saveAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import axios from "axios";
+import { Eye, EyeOff, Activity, Loader2 } from "lucide-react";
+import Link from "next/link";
 
-export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function toErrorMessage(data: unknown, fallback: string): string {
+  const detail =
+    data && typeof data === "object" && "detail" in data
+      ? (data as { detail?: unknown }).detail
+      : data;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+  if (typeof detail === "string") return detail;
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (!item || typeof item !== "object") return null;
+
+        const msg =
+          "msg" in item && typeof item.msg === "string" ? item.msg : null;
+        if (!msg) return null;
+
+        const loc =
+          "loc" in item && Array.isArray(item.loc)
+            ? item.loc.map((part) => String(part)).join(".")
+            : null;
+
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    if (messages.length > 0) return messages.join(", ");
+  }
+
+  if (detail && typeof detail === "object") {
+    if ("msg" in detail && typeof detail.msg === "string") return detail.msg;
     try {
-      const { data } = await authApi.login({ email, password })
-      saveAuth(data.access_token, data.user)
-      const role = data.user.role
-      if (role === 'super_admin') router.push('/super-admin')
-      else if (role === 'admin') router.push('/admin')
-      else if (role === 'doctor') router.push('/doctor')
-      else if (role === 'receptionist') router.push('/receptionist')
-      else router.push('/patient/dashboard')
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.detail ?? 'Invalid email or password')
-      } else {
-        setError('Something went wrong')
-      }
-    } finally {
-      setIsLoading(false)
+      return JSON.stringify(detail);
+    } catch {
+      return fallback;
     }
   }
+
+  return fallback;
+}
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("password123");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data } = await authApi.login({ email, password });
+      saveAuth(data.access_token, data.user);
+      const role = data.user.role;
+      if (role === "super_admin") router.push("/super-admin");
+      else if (role === "admin") router.push("/admin");
+      else if (role === "doctor") router.push("/doctor");
+      else if (role === "receptionist") router.push("/receptionist");
+      else router.push("/patient/dashboard");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(toErrorMessage(err.response?.data, "Invalid email or password"));
+      } else {
+        setError("Something went wrong");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -54,14 +96,21 @@ export default function LoginPage() {
 
         <div className="absolute top-32 right-8 space-y-3 opacity-60">
           {[
-            { token: 'A05', status: 'Now Serving', color: 'text-brand-400' },
-            { token: 'A06', status: 'Next Up', color: 'text-amber-400' },
-            { token: 'A07', status: 'Waiting', color: 'text-surface-400' },
+            { token: "A05", status: "Now Serving", color: "text-brand-400" },
+            { token: "A06", status: "Next Up", color: "text-amber-400" },
+            { token: "A07", status: "Waiting", color: "text-surface-400" },
           ].map((item) => (
-            <div key={item.token} className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 w-44">
+            <div
+              key={item.token}
+              className="bg-white/8 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 w-44"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-white font-heading">{item.token}</span>
-                <span className={cn('text-xs font-medium', item.color)}>{item.status}</span>
+                <span className="text-xl font-bold text-white font-heading">
+                  {item.token}
+                </span>
+                <span className={cn("text-xs font-medium", item.color)}>
+                  {item.status}
+                </span>
               </div>
             </div>
           ))}
@@ -72,13 +121,18 @@ export default function LoginPage() {
             <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center shadow-lg">
               <Activity size={20} className="text-white" />
             </div>
-            <span className="text-2xl font-bold text-white font-heading">CareQueue AI</span>
+            <span className="text-2xl font-bold text-white font-heading">
+              CareQueue AI
+            </span>
           </div>
           <h2 className="text-3xl font-bold text-white font-heading leading-tight mb-3">
-            Real-time queue intelligence<br />for modern clinics
+            Real-time queue intelligence
+            <br />
+            for modern clinics
           </h2>
           <p className="text-white/50 text-sm leading-relaxed mb-8">
-            Manage patient flow, reduce wait times, and deliver better care with AI-powered insights.
+            Manage patient flow, reduce wait times, and deliver better care with
+            AI-powered insights.
           </p>
           <Link
             href="/patient"
@@ -95,15 +149,26 @@ export default function LoginPage() {
             <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
               <Activity size={16} className="text-white" />
             </div>
-            <span className="text-xl font-bold font-heading text-surface-900">CareQueue AI</span>
+            <span className="text-xl font-bold font-heading text-surface-900">
+              CareQueue AI
+            </span>
           </div>
 
-          <h1 className="text-2xl font-bold font-heading text-surface-900 mb-1">Welcome back</h1>
-          <p className="text-surface-500 text-sm mb-8">Sign in to your account</p>
+          <h1 className="text-2xl font-bold font-heading text-surface-900 mb-1">
+            Welcome back
+          </h1>
+          <p className="text-surface-500 text-sm mb-8">
+            Sign in to your account
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="login-email" className="block text-sm font-medium text-surface-700 mb-1.5">Email</Label>
+              <Label
+                htmlFor="login-email"
+                className="block text-sm font-medium text-surface-700 mb-1.5"
+              >
+                Email
+              </Label>
               <Input
                 id="login-email"
                 type="email"
@@ -115,11 +180,16 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <Label htmlFor="login-password" className="block text-sm font-medium text-surface-700 mb-1.5">Password</Label>
+              <Label
+                htmlFor="login-password"
+                className="block text-sm font-medium text-surface-700 mb-1.5"
+              >
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="login-password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -149,9 +219,9 @@ export default function LoginPage() {
               id="login-submit"
               disabled={isLoading}
               className={cn(
-                'w-full h-12 rounded-xl font-semibold text-white transition-all',
-                'bg-brand-500 hover:bg-brand-600 active:scale-[0.98]',
-                'flex items-center justify-center gap-2'
+                "w-full h-12 rounded-xl font-semibold text-white transition-all",
+                "bg-brand-500 hover:bg-brand-600 active:scale-[0.98]",
+                "flex items-center justify-center gap-2",
               )}
             >
               {isLoading ? (
@@ -160,26 +230,32 @@ export default function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                'Sign in'
+                "Sign in"
               )}
             </Button>
           </form>
 
           <p className="text-center text-sm text-surface-500 mt-6">
-            Need a clinic workspace?{' '}
-            <Link href="/auth/register" className="text-brand-600 hover:text-brand-700 font-medium">
+            Need a clinic workspace?{" "}
+            <Link
+              href="/auth/register"
+              className="text-brand-600 hover:text-brand-700 font-medium"
+            >
               Create clinic account
             </Link>
           </p>
 
           <p className="text-center text-sm text-surface-400 mt-2">
-            Patient?{' '}
-            <Link href="/auth/patient-register" className="text-brand-500 hover:text-brand-600 font-medium">
+            Patient?{" "}
+            <Link
+              href="/auth/patient-register"
+              className="text-brand-500 hover:text-brand-600 font-medium"
+            >
               Create patient account &rarr;
             </Link>
           </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
