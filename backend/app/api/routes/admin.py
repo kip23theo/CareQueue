@@ -10,8 +10,10 @@ from pydantic import BaseModel, Field
 
 from app.models.clinic import Clinic
 from app.models.doctor import Doctor
-from app.models.enums import QueueStatus
+from app.models.enums import QueueStatus, UserRole
 from app.models.queue_token import QueueToken
+from app.services.notification_service import create_notification
+from app.services.queue_service import compute_wait_minutes, recalculate_waiting_positions
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -35,7 +37,8 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
         "id": str(token.id),
         "token_id": str(token.id),
         "clinic_id": str(token.clinic_id),
-        "doctor_id": str(token.doctor_id),
+        "doctor_id": str(token.doctor_id) if token.doctor_id else None,
+        "patient_user_id": str(token.patient_user_id) if token.patient_user_id else None,
         "token_number": token.token_number,
         "token_display": f"A{token.token_number:02d}",
         "patient_name": token.patient_name,
@@ -50,6 +53,12 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
         "consult_start": token.consult_start,
         "consult_end": token.consult_end,
         "date": token.date,
+        "payment_amount": token.payment_amount,
+        "payment_method": token.payment_method,
+        "payment_notes": token.payment_notes or None,
+        "payment_recorded_at": token.payment_recorded_at,
+        "payment_recorded_by_role": token.payment_recorded_by_role,
+        "payment_recorded_by_name": token.payment_recorded_by_name,
         "is_walkin": True,
     }
 
@@ -74,19 +83,16 @@ def _serialize_clinic(clinic: Clinic) -> dict[str, Any]:
 
 
 async def _recalculate_waiting_positions(clinic: Clinic, date: str) -> None:
-    waiting_tokens = await QueueToken.find(
-        QueueToken.clinic_id == clinic.id,
-        QueueToken.date == date,
-        QueueToken.status == QueueStatus.WAITING,
-    ).sort("+joined_at").to_list()
+    await recalculate_waiting_positions(clinic.id, date)
 
-    for idx, token in enumerate(waiting_tokens, start=1):
-        expected_wait = (idx * clinic.avg_consult_time) + clinic.delay_buffer
-        if token.position != idx or token.est_wait_mins != expected_wait:
-            token.position = idx
-            token.est_wait_mins = expected_wait
-            token.updated_at = _now()
-            await token.save()
+
+def _doctor_display_name(doctor: Doctor | None) -> str:
+    if doctor is None:
+        return "the doctor"
+    clean_name = doctor.name.strip()
+    if clean_name.lower().startswith("dr."):
+        return clean_name
+    return f"Dr. {clean_name}"
 
 
 class AddWalkinRequest(BaseModel):
@@ -102,6 +108,14 @@ class AddWalkinRequest(BaseModel):
 class QueueActionRequest(BaseModel):
     clinic_id: str
     doctor_id: str
+
+
+class RecordPaymentRequest(BaseModel):
+    amount: float = Field(gt=0, le=10000000)
+    method: str = Field(min_length=2, max_length=60)
+    notes: str | None = Field(default=None, max_length=600)
+    entered_by_role: UserRole | None = None
+    entered_by_name: str | None = Field(default=None, max_length=120)
 
 
 class UpdateClinicRequest(BaseModel):
@@ -264,11 +278,12 @@ async def add_walkin(payload: AddWalkinRequest) -> dict[str, Any]:
         symptoms=(payload.symptoms or "").strip(),
         status=QueueStatus.WAITING,
         position=position,
-        est_wait_mins=(position * doctor.avg_consult_mins) + doctor.delay_mins + clinic.delay_buffer,
+        est_wait_mins=compute_wait_minutes(position=position, clinic=clinic, doctor=doctor),
         joined_at=now,
         date=today,
     )
     await token.insert()
+    await _recalculate_waiting_positions(clinic, today)
 
     return _serialize_queue_token(token)
 
@@ -314,6 +329,16 @@ async def call_next(payload: QueueActionRequest) -> dict[str, Any]:
     await next_token.save()
 
     await _recalculate_waiting_positions(clinic, today)
+    called_doctor = doctor
+    if next_token.doctor_id and next_token.doctor_id != doctor.id:
+        called_doctor = await Doctor.get(next_token.doctor_id)
+    await create_notification(
+        token=next_token,
+        message=(
+            f"Your token A{next_token.token_number:02d} is next! "
+            f"{_doctor_display_name(called_doctor)} will see you shortly. Please proceed inside."
+        ),
+    )
     return _serialize_queue_token(next_token)
 
 
@@ -354,6 +379,9 @@ async def mark_emergency(token_id: str = Path(..., description="Token id")) -> d
     token.est_wait_mins = 0
     token.updated_at = _now()
     await token.save()
+    clinic = await Clinic.get(token.clinic_id)
+    if clinic is not None:
+        await _recalculate_waiting_positions(clinic, token.date)
 
     return _serialize_queue_token(token)
 
@@ -372,6 +400,9 @@ async def start_consultation(token_id: str = Path(..., description="Token id")) 
     token.consult_start = _now()
     token.updated_at = _now()
     await token.save()
+    clinic = await Clinic.get(token.clinic_id)
+    if clinic is not None:
+        await _recalculate_waiting_positions(clinic, token.date)
 
     return {"token_id": str(token.id), "status": token.status}
 
@@ -390,8 +421,44 @@ async def complete_consultation(token_id: str = Path(..., description="Token id"
     token.consult_end = _now()
     token.updated_at = _now()
     await token.save()
+    clinic = await Clinic.get(token.clinic_id)
+    if clinic is not None:
+        await _recalculate_waiting_positions(clinic, token.date)
 
     return {"token_id": str(token.id), "status": token.status}
+
+
+@router.patch(
+    "/tokens/{token_id}/payment",
+    summary="Record payment for completed consultation",
+)
+async def record_payment(
+    payload: RecordPaymentRequest,
+    token_id: str = Path(..., description="Token id"),
+) -> dict[str, Any]:
+    token_object_id = _parse_object_id(token_id, "token_id")
+    token = await QueueToken.get(token_object_id)
+    if token is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token not found")
+
+    if token.status != QueueStatus.COMPLETED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payment can be recorded only for completed consultations",
+        )
+
+    token.payment_amount = round(payload.amount, 2)
+    token.payment_method = payload.method.strip().lower()
+    token.payment_notes = (payload.notes or "").strip()
+    token.payment_recorded_at = _now()
+    token.payment_recorded_by_role = payload.entered_by_role
+    token.payment_recorded_by_name = (
+        payload.entered_by_name.strip() if payload.entered_by_name else None
+    )
+    token.updated_at = _now()
+    await token.save()
+
+    return _serialize_queue_token(token)
 
 
 @router.patch(
@@ -407,6 +474,9 @@ async def mark_no_show(token_id: str = Path(..., description="Token id")) -> dic
     token.status = QueueStatus.NO_SHOW
     token.updated_at = _now()
     await token.save()
+    clinic = await Clinic.get(token.clinic_id)
+    if clinic is not None:
+        await _recalculate_waiting_positions(clinic, token.date)
 
     return {"token_id": str(token.id), "status": token.status}
 

@@ -4,12 +4,13 @@ from beanie import Document, PydanticObjectId
 from pymongo import ASCENDING, IndexModel
 
 from app.models.base import TimestampMixin
-from app.models.enums import QueueStatus
+from app.models.enums import QueueStatus, UserRole
 
 
 class QueueToken(TimestampMixin, Document):
     clinic_id: PydanticObjectId
     doctor_id: PydanticObjectId | None = None
+    patient_user_id: PydanticObjectId | None = None
     token_number: int
     patient_name: str
     patient_phone: str
@@ -23,6 +24,12 @@ class QueueToken(TimestampMixin, Document):
     consult_start: datetime | None = None
     consult_end: datetime | None = None
     date: str
+    payment_amount: float | None = None
+    payment_method: str | None = None
+    payment_notes: str = ""
+    payment_recorded_at: datetime | None = None
+    payment_recorded_by_role: UserRole | None = None
+    payment_recorded_by_name: str | None = None
 
     class Settings:
         name = "queue_tokens"
@@ -30,4 +37,6 @@ class QueueToken(TimestampMixin, Document):
             IndexModel([("clinic_id", ASCENDING), ("date", ASCENDING)]),
             IndexModel([("status", ASCENDING)]),
             IndexModel([("position", ASCENDING)]),
+            IndexModel([("doctor_id", ASCENDING), ("status", ASCENDING)]),
+            IndexModel([("patient_user_id", ASCENDING)]),
         ]

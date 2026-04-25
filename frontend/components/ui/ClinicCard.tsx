@@ -13,6 +13,7 @@ interface Props {
   clinic: Clinic
   userLocation?: { lat: number; lng: number } | null
   onSelect?: () => void
+  onBook?: () => void
   isBestMatch?: boolean
   aiReason?: string
 }
@@ -50,7 +51,7 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export function ClinicCard({ clinic, userLocation, onSelect, isBestMatch, aiReason }: Props) {
+export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch, aiReason }: Props) {
   const clinicLat = clinic.location?.coordinates?.[1]
   const clinicLng = clinic.location?.coordinates?.[0]
   const hasCoordinates = Number.isFinite(clinicLat) && Number.isFinite(clinicLng)
@@ -63,6 +64,11 @@ export function ClinicCard({ clinic, userLocation, onSelect, isBestMatch, aiReas
       userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined
     )
     window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleBook = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    onBook?.()
   }
 
   return (
@@ -150,7 +156,16 @@ export function ClinicCard({ clinic, userLocation, onSelect, isBestMatch, aiReas
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-surface-100 flex justify-end">
+      <div className="mt-4 pt-3 border-t border-surface-100 flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={!clinic.is_open}
+          onClick={handleBook}
+          className="h-8 rounded-lg bg-brand-500 px-4 text-xs text-white hover:bg-brand-600"
+        >
+          Book
+        </Button>
         <Button
           type="button"
           size="sm"

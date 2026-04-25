@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { clinicsApi, tokensApi } from '@/lib/api-calls'
+import { getUser } from '@/lib/auth'
 import { usePatient } from '@/context/PatientContext'
 import { useToast } from '@/context/ToastContext'
 import { WaitTimeMeter } from '@/components/ui/WaitTimeMeter'
@@ -25,6 +26,7 @@ function Skeleton({ className }: { className?: string }) {
 export default function ClinicDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const authUser = getUser()
   const { location, setMyToken, myToken } = usePatient()
   const { success, error: toastError } = useToast()
   const [clinic, setClinic] = useState<Clinic | null>(null)
@@ -82,6 +84,7 @@ export default function ClinicDetailPage() {
       const { data } = await tokensApi.join({
         clinic_id: id,
         doctor_id: selectedDoctor,
+        patient_user_id: authUser?.role === 'patient' ? authUser.id : undefined,
         patient_name: name,
         patient_phone: phone,
         patient_age: Number(age),

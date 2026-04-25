@@ -62,7 +62,8 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
     return {
         "id": str(token.id),
         "clinic_id": str(token.clinic_id),
-        "doctor_id": str(token.doctor_id),
+        "doctor_id": str(token.doctor_id) if token.doctor_id else None,
+        "patient_user_id": str(token.patient_user_id) if token.patient_user_id else None,
         "token_number": token.token_number,
         "token_display": f"A{token.token_number:02d}",
         "patient_name": token.patient_name,
@@ -77,6 +78,12 @@ def _serialize_queue_token(token: QueueToken) -> dict[str, Any]:
         "consult_start": token.consult_start,
         "consult_end": token.consult_end,
         "date": token.date,
+        "payment_amount": token.payment_amount,
+        "payment_method": token.payment_method,
+        "payment_notes": token.payment_notes or None,
+        "payment_recorded_at": token.payment_recorded_at,
+        "payment_recorded_by_role": token.payment_recorded_by_role,
+        "payment_recorded_by_name": token.payment_recorded_by_name,
         "is_walkin": False,
     }
 

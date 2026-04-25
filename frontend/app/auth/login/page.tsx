@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api-calls";
 import { saveAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -56,11 +56,14 @@ function toErrorMessage(data: unknown, fallback: string): string {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nextPath = searchParams.get("next");
+  const safeNextPath = nextPath?.startsWith("/") ? nextPath : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +77,7 @@ export default function LoginPage() {
       else if (role === "admin") router.push("/admin");
       else if (role === "doctor") router.push("/doctor");
       else if (role === "receptionist") router.push("/receptionist");
-      else router.push("/patient/dashboard");
+      else router.push(safeNextPath ?? "/patient/dashboard");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(toErrorMessage(err.response?.data, "Invalid email or password"));

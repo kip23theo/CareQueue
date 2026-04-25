@@ -12,6 +12,7 @@ from app.api.routes.clinics import router as clinics_router
 from app.api.routes.doctors import router as doctors_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.patients import router as patients_router
+from app.api.routes.platform_feedback import router as platform_feedback_router
 from app.api.routes.reviews import router as reviews_router
 from app.api.routes.super_admin import router as super_admin_router
 from app.core.config import get_settings
@@ -22,6 +23,7 @@ from app.models.doctor import Doctor
 from app.models.medical_document import MedicalDocument
 from app.models.medical_history import MedicalHistory
 from app.models.notification import Notification
+from app.models.platform_feedback import PlatformFeedback
 from app.models.queue_token import QueueToken
 from app.models.review import Review
 from app.models.user import User
@@ -56,6 +58,7 @@ app.include_router(super_admin_router)
 app.include_router(notifications_router)
 app.include_router(patients_router)
 app.include_router(reviews_router)
+app.include_router(platform_feedback_router)
 
 
 @app.on_event("startup")
@@ -70,6 +73,7 @@ async def startup_event() -> None:
             QueueToken,
             Notification,
             Review,
+            PlatformFeedback,
             MedicalHistory,
             MedicalDocument,
         ],

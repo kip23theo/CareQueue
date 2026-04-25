@@ -8,8 +8,9 @@ import type {
   AddWalkinRequest, LiveQueue, DoctorQueue,
   Doctor, UpdateDoctorAvailabilityRequest, UpdateDoctorDelayRequest,
   ClinicAnalytics, Notification, Review, AddReviewRequest,
-  ClinicReviewSummary,
+  ClinicReviewSummary, PlatformFeedback, AddPlatformFeedbackRequest,
   MedicalDocument, MedicalHistoryEntry, PatientDashboardResponse,
+  DoctorConsultedPatientsResponse, RecordPaymentRequest,
   AIRecommendRequest, AIRecommendResponse,
   AIChatRequest, AIChatResponse,
   AIParsePatientRequest, AIParsePatientResponse,
@@ -77,6 +78,7 @@ function toQueueToken(raw: unknown): QueueToken {
     _id: t._id ?? t.token_id ?? t.id ?? '',
     clinic_id: t.clinic_id ?? '',
     doctor_id: t.doctor_id ?? '',
+    patient_user_id: t.patient_user_id ?? null,
     token_number: t.token_number ?? 0,
     token_display: t.token_display ?? '',
     patient_name: t.patient_name ?? '',
@@ -91,6 +93,12 @@ function toQueueToken(raw: unknown): QueueToken {
     called_at: t.called_at,
     consult_start: t.consult_start,
     consult_end: t.consult_end,
+    payment_amount: t.payment_amount ?? null,
+    payment_method: t.payment_method ?? null,
+    payment_notes: t.payment_notes ?? null,
+    payment_recorded_at: t.payment_recorded_at ?? null,
+    payment_recorded_by_role: t.payment_recorded_by_role ?? null,
+    payment_recorded_by_name: t.payment_recorded_by_name ?? null,
     date: t.date ?? now.slice(0, 10),
     is_walkin: t.is_walkin ?? false,
   }
@@ -255,6 +263,28 @@ function toMedicalDocument(raw: unknown): MedicalDocument {
   }
 }
 
+function toDoctorConsultedPatients(raw: unknown): DoctorConsultedPatientsResponse {
+  const payload = (raw ?? {}) as Partial<DoctorConsultedPatientsResponse>
+  return {
+    doctor_id: payload.doctor_id ?? '',
+    consulted_patients: (payload.consulted_patients ?? []).map((record) => ({
+      token: toQueueToken(record.token),
+      patient: record.patient
+        ? {
+            id: record.patient.id ?? '',
+            name: record.patient.name ?? 'Patient',
+            email: record.patient.email ?? '',
+            phone: record.patient.phone ?? null,
+            role: 'patient',
+          }
+        : null,
+      patient_lookup: record.patient_lookup ?? 'not_found',
+      medical_history: (record.medical_history ?? []).map(toMedicalHistory),
+      documents: (record.documents ?? []).map(toMedicalDocument),
+    })),
+  }
+}
+
 function toReview(raw: unknown): Review {
   const review = (raw ?? {}) as Partial<Review> & { id?: string }
   return {
@@ -268,6 +298,39 @@ function toReview(raw: unknown): Review {
     comment: review.comment ?? '',
     created_at: review.created_at ?? new Date().toISOString(),
     patient_name: review.patient_name,
+  }
+}
+
+function toPlatformFeedback(raw: unknown): PlatformFeedback {
+  const feedback = (raw ?? {}) as Partial<PlatformFeedback>
+  return {
+    id: feedback.id ?? '',
+    user_id: feedback.user_id ?? '',
+    user_name: feedback.user_name ?? 'User',
+    user_email: feedback.user_email ?? '',
+    user_role: feedback.user_role ?? 'patient',
+    clinic_id: feedback.clinic_id ?? null,
+    clinic_name: feedback.clinic_name ?? null,
+    rating: feedback.rating ?? 0,
+    comment: feedback.comment ?? '',
+    created_at: feedback.created_at ?? new Date().toISOString(),
+  }
+}
+
+function toNotification(raw: unknown): Notification {
+  const notification = (raw ?? {}) as Partial<Notification>
+  return {
+    _id: notification._id ?? '',
+    token_id: notification.token_id ?? '',
+    clinic_id: notification.clinic_id ?? '',
+    clinic_name: notification.clinic_name ?? null,
+    channel: notification.channel ?? 'push',
+    message: notification.message ?? '',
+    status: notification.status ?? 'sent',
+    sent_at: notification.sent_at ?? new Date().toISOString(),
+    patient_name: notification.patient_name ?? '',
+    patient_phone: notification.patient_phone ?? '',
+    token_display: notification.token_display ?? null,
   }
 }
 
@@ -352,6 +415,7 @@ export const tokensApi = {
           _id: payload.token_id,
           clinic_id: body.clinic_id,
           doctor_id: body.doctor_id,
+          patient_user_id: body.patient_user_id,
           token_number: payload.token_number ?? 0,
           patient_name: body.patient_name,
           patient_phone: body.patient_phone,
@@ -367,6 +431,12 @@ export const tokensApi = {
       }
       return withData(res, normalized)
     }),
+  getByPatient: (patientUserId: string, includeTerminal = true) =>
+    api.get<unknown[]>(`/tokens/patient/${patientUserId}`, {
+      params: { include_terminal: includeTerminal },
+    }).then((res) =>
+      withData(res, (Array.isArray(res.data) ? res.data : []).map(toQueueToken))
+    ),
   getStatus: (tokenId: string) =>
     api.get<unknown>(`/tokens/${tokenId}/status`).then((res) => withData(res, toQueueToken(res.data))),
   cancel: (tokenId: string) =>
@@ -446,6 +516,10 @@ export const adminQueueApi = {
     api.patch<unknown>(`/admin/tokens/${tokenId}/complete`).then((res) =>
       withData(res, { message: ((res.data ?? {}) as { status?: string }).status ?? 'Completed' })
     ),
+  recordPayment: (tokenId: string, body: RecordPaymentRequest) =>
+    api.patch<unknown>(`/admin/tokens/${tokenId}/payment`, body).then((res) =>
+      withData(res, toQueueToken(res.data))
+    ),
   markNoShow: (tokenId: string) =>
     api.patch<unknown>(`/admin/tokens/${tokenId}/no-show`).then((res) =>
       withData(res, { message: ((res.data ?? {}) as { status?: string }).status ?? 'No-show' })
@@ -467,9 +541,14 @@ export const doctorsApi = {
         next_five: next,
         waiting_count: payload.waiting_count ?? next.length,
         completed_today: payload.completed_today ?? 0,
+        completed_tokens: (payload.completed_tokens ?? []).map(toQueueToken),
       }
       return withData(res, normalized)
     }),
+  getConsultedPatients: (doctorId: string, limit = 50) =>
+    api.get<unknown>(`/doctors/${doctorId}/consulted-patients`, { params: { limit } }).then((res) =>
+      withData(res, toDoctorConsultedPatients(res.data))
+    ),
   updateAvailability: (doctorId: string, body: UpdateDoctorAvailabilityRequest) =>
     api.patch<unknown>(`/doctors/${doctorId}/availability`, body).then((res) =>
       withData(res, { message: 'Availability updated' })
@@ -512,6 +591,11 @@ export const superAdminApi = {
       const payload = Array.isArray(res.data) ? res.data : []
       return withData(res, payload.map(toSuperAdminUser))
     }),
+  getPlatformFeedback: (params: { viewer_user_id: string; role?: PlatformFeedback['user_role'] }) =>
+    api.get<unknown>('/super-admin/platform-feedback', { params }).then((res) => {
+      const payload = Array.isArray(res.data) ? res.data : []
+      return withData(res, payload.map(toPlatformFeedback))
+    }),
 }
 
 // ── Notifications ───────────────────────────────────────
@@ -520,7 +604,19 @@ export const notificationsApi = {
     api.get<unknown>(`/notifications/log/${clinicId}`).then((res) => {
       const payload = res.data as { notifications?: Notification[] } | Notification[]
       const list = Array.isArray(payload) ? payload : payload?.notifications ?? []
-      return withData(res, list)
+      return withData(res, list.map(toNotification))
+    }),
+  getPatient: (patientUserId: string) =>
+    api.get<unknown>(`/notifications/patient/${patientUserId}`).then((res) => {
+      const payload = res.data as { notifications?: Notification[] } | Notification[]
+      const list = Array.isArray(payload) ? payload : payload?.notifications ?? []
+      return withData(res, list.map(toNotification))
+    }),
+  getByToken: (tokenId: string) =>
+    api.get<unknown>(`/notifications/token/${tokenId}`).then((res) => {
+      const payload = res.data as { notifications?: Notification[] } | Notification[]
+      const list = Array.isArray(payload) ? payload : payload?.notifications ?? []
+      return withData(res, list.map(toNotification))
     }),
   send: (tokenId: string, channel: string, message?: string) =>
     api.post<unknown>('/notifications/send', { token_id: tokenId, channel, message }).then((res) =>
@@ -548,6 +644,12 @@ export const reviewsApi = {
     api.get<ClinicReviewSummary>(`/reviews/clinic/${clinicId}/summary`),
 }
 
+// ── Platform Feedback ──────────────────────────────────
+export const platformFeedbackApi = {
+  submit: (body: AddPlatformFeedbackRequest) =>
+    api.post<unknown>('/platform-feedback', body).then((res) => withData(res, toPlatformFeedback(res.data))),
+}
+
 // ── AI ──────────────────────────────────────────────────
 export const aiApi = {
   recommend: (body: AIRecommendRequest) =>
@@ -570,11 +672,15 @@ export const aiApi = {
     }),
   predictWait: (clinicId: string) =>
     api.get<unknown>(`/ai/predict-wait/${clinicId}`).then((res) => {
-      const payload = (res.data ?? {}) as Partial<PredictWaitResponse> & { updated_tokens?: number }
+      const payload = (res.data ?? {}) as Partial<PredictWaitResponse> & {
+        updated_tokens?: number
+        notifications_generated?: number
+      }
       return withData(res, {
         tokens: payload.tokens ?? [],
         updated_tokens: payload.updated_tokens,
-      } as PredictWaitResponse & { updated_tokens?: number })
+        notifications_generated: payload.notifications_generated,
+      } as PredictWaitResponse & { updated_tokens?: number; notifications_generated?: number })
     }),
   chat: (body: AIChatRequest) =>
     api.post<unknown>(
@@ -594,11 +700,13 @@ export const aiApi = {
       const payload = (res.data ?? {}) as Partial<AIParsePatientResponse> & {
         name?: string
         age?: number
+        gender?: 'male' | 'female' | 'other' | null
       }
       return withData(res, {
         patient_name: payload.patient_name ?? payload.name ?? '',
         patient_age: payload.patient_age ?? payload.age ?? null,
-        patient_gender: payload.patient_gender ?? null,
+        patient_gender: payload.patient_gender ?? payload.gender ?? null,
+        gender: payload.gender ?? payload.patient_gender ?? null,
         symptoms: payload.symptoms ?? null,
         confidence: payload.confidence ?? 0,
       })

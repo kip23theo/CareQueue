@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DM_Sans, Inter } from "next/font/google";
-import { SonnerProvider } from "@/components/providers/SonnerProvider";
 import AICopilotMount from "@/components/ai/AICopilotMount";
 import "./globals.css";
 

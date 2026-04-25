@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Users, BarChart3, Bell,
   Settings, ClipboardList, Stethoscope,
-  UserCog, LogOut, ChevronRight, Star
+  UserCog, LogOut, ChevronRight, Star, Wallet, FolderOpen
 } from 'lucide-react'
 
 interface NavItem {
@@ -22,6 +22,7 @@ interface NavItem {
 const adminNav: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { href: '/admin/queue', label: 'Live Queue', icon: <ClipboardList size={18} /> },
+  { href: '/admin/payments', label: 'Payments', icon: <Wallet size={18} /> },
   { href: '/admin/doctors', label: 'Doctors', icon: <Stethoscope size={18} /> },
   { href: '/admin/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
   { href: '/admin/reviews', label: 'Reviews', icon: <Star size={18} /> },
@@ -31,6 +32,8 @@ const adminNav: NavItem[] = [
 
 const doctorNav: NavItem[] = [
   { href: '/doctor', label: 'My Queue', icon: <ClipboardList size={18} /> },
+  { href: '/doctor/payments', label: 'Payments', icon: <Wallet size={18} /> },
+  { href: '/doctor/records', label: 'Consulted Records', icon: <FolderOpen size={18} /> },
   { href: '/doctor/reviews', label: 'Reviews', icon: <Star size={18} /> },
   { href: '/doctor/settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
@@ -38,6 +41,7 @@ const doctorNav: NavItem[] = [
 const receptionistNav: NavItem[] = [
   { href: '/receptionist', label: 'Queue Board', icon: <ClipboardList size={18} /> },
   { href: '/receptionist/add', label: 'Add Walk-in', icon: <Users size={18} /> },
+  { href: '/receptionist/payments', label: 'Payments', icon: <Wallet size={18} /> },
   { href: '/receptionist/search', label: 'Search Patient', icon: <UserCog size={18} /> },
   { href: '/receptionist/reviews', label: 'Reviews', icon: <Star size={18} /> },
 ]

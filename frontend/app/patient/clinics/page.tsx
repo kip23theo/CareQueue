@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { usePatient } from '@/context/PatientContext'
 import { clinicsApi } from '@/lib/api-calls'
-import { aiApi } from '@/lib/api-calls'
+import { getUser } from '@/lib/auth'
 import {
   reverseGeocodeLocation,
   searchLocationSuggestions,
@@ -21,17 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { Card } from '@/components/ui/card'
-import type { AIRecommendation } from '@/types'
-import { Search, Sparkles, X, Loader2, MapPin, LocateFixed } from 'lucide-react'
+import { openAICopilotDialog } from '@/lib/ai-copilot'
+import { Search, Sparkles, Loader2, MapPin, LocateFixed } from 'lucide-react'
 import axios from 'axios'
 
 const SPECS = ['General', 'Paediatrics', 'ENT', 'Orthopaedics', 'Gynaecology', 'Cardiology']
@@ -39,12 +41,6 @@ const SORTS = [
   { value: 'nearest', label: 'Nearest' },
   { value: 'wait', label: 'Shortest wait' },
   { value: 'rating', label: 'Highest rated' },
-]
-const CITY_PRESETS = [
-  { name: 'Mumbai', lat: 19.076, lng: 72.877 },
-  { name: 'Delhi', lat: 28.679, lng: 77.069 },
-  { name: 'Bangalore', lat: 12.971, lng: 77.594 },
-  { name: 'Chennai', lat: 13.083, lng: 80.27 },
 ]
 
 function SkeletonCard() {
@@ -77,11 +73,9 @@ export default function ClinicsPage() {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('nearest')
   const [specFilter, setSpecFilter] = useState<string[]>([])
-  const [showAIModal, setShowAIModal] = useState(false)
-  const [symptoms, setSymptoms] = useState('')
-  const [aiRecommendations, setAIRecommendations] = useState<AIRecommendation[]>([])
-  const [isAILoading, setIsAILoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
+  const [selectedClinicForBooking, setSelectedClinicForBooking] = useState<string | null>(null)
   const trimmedLocationQuery = locationQuery.trim()
   const activeLocationLabel = location?.label?.trim()
     ? location.label
@@ -94,10 +88,7 @@ export default function ClinicsPage() {
     (isLocationSearchLoading || locationSuggestions.length > 0)
 
   useEffect(() => {
-    if (!location) {
-      router.push('/patient')
-      return
-    }
+    if (!location) return
     const fetchClinics = async () => {
       setIsLoading(true)
       setError(null)
@@ -113,7 +104,7 @@ export default function ClinicsPage() {
       }
     }
     fetchClinics()
-  }, [location, router, setNearbyClinics])
+  }, [location, setNearbyClinics])
 
   useEffect(() => {
     if (trimmedLocationQuery.length < 2 || trimmedLocationQuery === activeLocationLabel.trim()) {
@@ -176,20 +167,6 @@ export default function ClinicsPage() {
     )
   }
 
-  const handleAIRecommend = async () => {
-    if (!location || !symptoms.trim()) return
-    setIsAILoading(true)
-    try {
-      const { data } = await aiApi.recommend({ lat: location.lat, lng: location.lng, symptoms })
-      setAIRecommendations(data.recommendations)
-      setShowAIModal(false)
-    } catch {
-      // ignore
-    } finally {
-      setIsAILoading(false)
-    }
-  }
-
   const filtered = useMemo(() => {
     let list = [...nearbyClinics]
     if (search) {
@@ -201,24 +178,102 @@ export default function ClinicsPage() {
     if (sort === 'nearest') list.sort((a, b) => (a.distance_km ?? 0) - (b.distance_km ?? 0))
     else if (sort === 'wait') list.sort((a, b) => (a.est_wait_mins ?? 999) - (b.est_wait_mins ?? 999))
     else if (sort === 'rating') list.sort((a, b) => b.rating - a.rating)
-
-    // Put AI recommended at top
-    if (aiRecommendations.length > 0) {
-      list.sort((a, b) => {
-        const aIdx = aiRecommendations.findIndex((r) => r.clinic_id === a._id)
-        const bIdx = aiRecommendations.findIndex((r) => r.clinic_id === b._id)
-        if (aIdx === -1 && bIdx === -1) return 0
-        if (aIdx === -1) return 1
-        if (bIdx === -1) return -1
-        return aIdx - bIdx
-      })
-    }
     return list
-  }, [nearbyClinics, search, sort, specFilter, aiRecommendations])
+  }, [nearbyClinics, search, sort, specFilter])
+
+  const handleBookClinic = (clinicId: string) => {
+    const user = getUser()
+    if (user?.role !== 'patient') {
+      setSelectedClinicForBooking(clinicId)
+      setIsAuthDialogOpen(true)
+      return
+    }
+    router.push(`/patient/clinic/${clinicId}`)
+  }
+
+  const bookingPath = selectedClinicForBooking
+    ? `/patient/clinic/${selectedClinicForBooking}`
+    : '/patient/clinics'
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4">
-      {/* Filter bar */}
+      {!location && (
+        <Card className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm mb-5">
+          <Badge className="rounded-full bg-brand-100 text-brand-700 border-transparent text-xs mb-3">
+            Location Required
+          </Badge>
+          <h1 className="text-xl font-bold font-heading text-surface-900">Enable location to explore nearby clinics</h1>
+          <p className="text-sm text-surface-600 mt-1.5">
+            Use GPS for accurate results or search your area manually.
+          </p>
+
+          <Button
+            type="button"
+            onClick={handleUseMyLocation}
+            disabled={isDetectingLocation}
+            className="w-full mt-4 h-11 rounded-xl bg-brand-500 text-white hover:bg-brand-600"
+          >
+            {isDetectingLocation ? (
+              <><Loader2 size={15} className="animate-spin" /> Detecting location...</>
+            ) : (
+              <><LocateFixed size={15} /> Use my location</>
+            )}
+          </Button>
+
+          <div className="flex items-center gap-2 my-3">
+            <div className="h-px flex-1 bg-surface-200" />
+            <span className="text-[11px] text-surface-400 uppercase tracking-wide">or search area</span>
+            <div className="h-px flex-1 bg-surface-200" />
+          </div>
+
+          <div className="relative">
+            <Input
+              type="text"
+              value={locationQuery}
+              onChange={(e) => {
+                const nextQuery = e.target.value
+                setLocationQuery(nextQuery)
+                if (nextQuery.trim().length < 2) {
+                  setLocationSuggestions([])
+                }
+                setLocationError(null)
+              }}
+              placeholder="Search location..."
+              className="h-10 rounded-xl border-surface-200 bg-white px-3 text-sm"
+            />
+            {shouldShowLocationDropdown && (
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-surface-200 bg-white shadow-lg p-1 max-h-56 overflow-y-auto">
+                {isLocationSearchLoading ? (
+                  <div className="px-2 py-2 text-xs text-surface-500 flex items-center gap-2">
+                    <Loader2 size={12} className="animate-spin" />
+                    Searching locations...
+                  </div>
+                ) : (
+                  locationSuggestions.map((suggestion) => (
+                    <button
+                      key={`${suggestion.lat}-${suggestion.lng}`}
+                      type="button"
+                      onClick={() => handleSelectLocation(suggestion)}
+                      className="w-full text-left px-2 py-2 rounded-lg hover:bg-surface-50 text-xs text-surface-700 leading-relaxed"
+                    >
+                      {suggestion.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <p className="mt-2 text-[11px] text-surface-400">
+            Search suggestions are powered by OpenStreetMap.
+          </p>
+          {locationError && (
+            <p className="mt-1 text-xs text-red-600">{locationError}</p>
+          )}
+        </Card>
+      )}
+
+      {location && (
       <div className="sticky top-14 z-30 bg-surface-50 py-3 space-y-3">
         <Card className="rounded-2xl border border-surface-200 bg-white px-3 py-3 shadow-sm">
           <div className="flex items-center gap-2 text-xs text-surface-500 mb-2">
@@ -281,21 +336,6 @@ export default function ClinicsPage() {
             </Button>
           </div>
 
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {CITY_PRESETS.map((city) => (
-              <Button
-                key={city.name}
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => handleSelectLocation({ lat: city.lat, lng: city.lng, label: city.name })}
-                className="h-7 rounded-full border-surface-200 bg-white text-[11px] text-surface-600 hover:border-brand-300 hover:text-brand-700"
-              >
-                {city.name}
-              </Button>
-            ))}
-          </div>
-
           <p className="mt-2 text-[11px] text-surface-400">
             Search suggestions are powered by OpenStreetMap.
           </p>
@@ -330,7 +370,7 @@ export default function ClinicsPage() {
         {/* Spec chips + AI button */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           <Button
-            onClick={() => setShowAIModal(true)}
+            onClick={openAICopilotDialog}
             size="sm"
             className="shrink-0 h-8 px-3 rounded-full bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 shadow-sm"
           >
@@ -357,28 +397,10 @@ export default function ClinicsPage() {
           ))}
         </div>
       </div>
-
-      {/* AI summary */}
-      {aiRecommendations.length > 0 && (
-        <Card className="mb-4 px-4 py-3 rounded-xl bg-brand-50 border border-brand-200 flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-1">
-            <Sparkles size={14} className="text-brand-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-brand-700">
-              AI found {aiRecommendations.length} best matches for your symptoms
-            </p>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setAIRecommendations([])}
-            className="h-6 w-6 text-brand-400 hover:text-brand-600"
-          >
-            <X size={14} />
-          </Button>
-        </Card>
       )}
 
       {/* Clinic list */}
+      {location && (
       <div className="space-y-3">
         {isLoading ? (
           <>
@@ -395,47 +417,43 @@ export default function ClinicsPage() {
           </div>
         ) : (
           filtered.map((clinic) => {
-            const aiRec = aiRecommendations.find((r) => r.clinic_id === clinic._id)
             return (
               <ClinicCard
                 key={clinic._id}
                 clinic={clinic}
-                isBestMatch={aiRec?.rank === 1}
-                aiReason={aiRec?.reason}
                 userLocation={location}
                 onSelect={() => router.push(`/patient/clinic/${clinic._id}`)}
+                onBook={() => handleBookClinic(clinic._id)}
               />
             )
           })
         )}
       </div>
+      )}
 
-      {/* AI modal */}
-      <Dialog open={showAIModal} onOpenChange={setShowAIModal}>
-        <DialogContent className="w-full max-w-sm rounded-2xl p-6">
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="max-w-md rounded-2xl border border-surface-200 bg-white">
           <DialogHeader>
-            <DialogTitle className="font-bold font-heading text-surface-900 flex items-center gap-2">
-              <Sparkles size={18} className="text-brand-500" />
-              AI Clinic Finder
-            </DialogTitle>
-            <DialogDescription className="text-sm text-surface-500">
-              Describe your symptoms and I&apos;ll find the best clinic for you.
+            <DialogTitle>Register as patient to book</DialogTitle>
+            <DialogDescription>
+              Booking requires a patient account. Create one to continue your clinic booking.
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            value={symptoms}
-            onChange={(e) => setSymptoms(e.target.value)}
-            placeholder="e.g. fever, headache, sore throat..."
-            rows={3}
-            className="rounded-xl border-surface-200 bg-surface-50 text-sm resize-none"
-          />
-          <Button
-            onClick={handleAIRecommend}
-            disabled={!symptoms.trim() || isAILoading}
-            className="w-full h-11 rounded-xl bg-brand-500 text-white hover:bg-brand-600 text-sm"
-          >
-            {isAILoading ? <><Loader2 size={16} className="animate-spin" /> Finding...</> : 'Find best clinic'}
-          </Button>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl border-surface-200"
+              onClick={() => setIsAuthDialogOpen(false)}
+            >
+              Continue browsing
+            </Button>
+            <Button asChild className="rounded-xl bg-brand-500 text-white hover:bg-brand-600">
+              <Link href={`/auth/patient-register?next=${encodeURIComponent(bookingPath)}`}>
+                Register as patient
+              </Link>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

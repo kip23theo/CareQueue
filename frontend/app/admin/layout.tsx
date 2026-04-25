@@ -6,6 +6,7 @@ import { getUser } from '@/lib/auth'
 import { ToastProvider } from '@/context/ToastContext'
 import { QueueProvider } from '@/context/QueueContext'
 import { StaffSidebar } from '@/components/layout/StaffSidebar'
+import { TopRightFeedbackButton } from '@/components/layout/TopRightFeedbackButton'
 import { useQueue } from '@/context/QueueContext'
 
 function SidebarWrapper() {
@@ -23,6 +24,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-surface-100">
       <SidebarWrapper />
+      <TopRightFeedbackButton href="/admin/feedback" />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import axios from 'axios'
 import { Activity, Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 
 export default function PatientRegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -26,6 +27,9 @@ export default function PatientRegisterPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const nextPath = searchParams.get('next')
+  const redirectPath = nextPath?.startsWith('/') ? nextPath : '/patient/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,7 +51,7 @@ export default function PatientRegisterPage() {
 
       const { data } = await authApi.login({ email, password })
       saveAuth(data.access_token, data.user)
-      router.push('/patient/dashboard')
+      router.push(redirectPath)
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.detail ?? 'Unable to create patient account')

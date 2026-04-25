@@ -142,6 +142,7 @@ export interface QueueToken {
   _id: string
   clinic_id: string
   doctor_id: string
+  patient_user_id?: string | null
   token_number: number
   token_display: string           // e.g. "A07"
   patient_name: string
@@ -156,6 +157,12 @@ export interface QueueToken {
   called_at?: string
   consult_start?: string
   consult_end?: string
+  payment_amount?: number | null
+  payment_method?: string | null
+  payment_notes?: string | null
+  payment_recorded_at?: string | null
+  payment_recorded_by_role?: 'super_admin' | 'admin' | 'doctor' | 'receptionist' | 'patient' | null
+  payment_recorded_by_name?: string | null
   date: string                    // "YYYY-MM-DD"
   is_walkin: boolean
 }
@@ -164,6 +171,7 @@ export interface QueueToken {
 export interface JoinQueueRequest {
   clinic_id: string
   doctor_id: string
+  patient_user_id?: string
   patient_name: string
   patient_phone: string
   patient_age: number
@@ -206,6 +214,15 @@ export interface DoctorQueue {
   next_five: QueueToken[]
   waiting_count: number
   completed_today: number
+  completed_tokens: QueueToken[]
+}
+
+export interface RecordPaymentRequest {
+  amount: number
+  method: string
+  notes?: string
+  entered_by_role?: 'super_admin' | 'admin' | 'doctor' | 'receptionist' | 'patient'
+  entered_by_name?: string
 }
 
 // ── Analytics ───────────────────────────────────────────
@@ -228,12 +245,14 @@ export interface Notification {
   _id: string
   token_id: string
   clinic_id: string
+  clinic_name?: string | null
   channel: NotificationChannel
   message: string
   status: 'sent' | 'failed'
   sent_at: string
   patient_name: string
   patient_phone: string
+  token_display?: string | null
 }
 
 // ── Reviews ─────────────────────────────────────────────
@@ -274,6 +293,26 @@ export interface ClinicReviewSummary {
   total_clinic_reviews: number
   total_doctor_reviews: number
   doctor_summaries: DoctorRatingSummary[]
+}
+
+// ── Platform Feedback ──────────────────────────────────
+export interface PlatformFeedback {
+  id: string
+  user_id: string
+  user_name: string
+  user_email: string
+  user_role: 'admin' | 'doctor' | 'patient'
+  clinic_id?: string | null
+  clinic_name?: string | null
+  rating: number
+  comment: string
+  created_at: string
+}
+
+export interface AddPlatformFeedbackRequest {
+  user_id: string
+  rating: number
+  comment: string
 }
 
 // ── Patient medical records ─────────────────────────────
@@ -319,6 +358,25 @@ export interface PatientDashboardResponse {
   }
   medical_history: MedicalHistoryEntry[]
   documents: MedicalDocument[]
+}
+
+export interface ConsultedPatientRecord {
+  token: QueueToken
+  patient: {
+    id: string
+    name: string
+    email: string
+    phone?: string | null
+    role: 'patient'
+  } | null
+  patient_lookup: 'linked_token' | 'phone_match' | 'not_found'
+  medical_history: MedicalHistoryEntry[]
+  documents: MedicalDocument[]
+}
+
+export interface DoctorConsultedPatientsResponse {
+  doctor_id: string
+  consulted_patients: ConsultedPatientRecord[]
 }
 
 // ── AI / Prediction ─────────────────────────────────────
@@ -367,6 +425,7 @@ export interface AIParsePatientResponse {
   patient_name: string
   patient_age: number | null
   patient_gender: 'male' | 'female' | 'other' | null
+  gender?: 'male' | 'female' | 'other' | null
   symptoms: string | null
   confidence: number
 }
@@ -375,8 +434,12 @@ export interface PredictWaitResponse {
   tokens: Array<{
     token_id: string
     token_number: number
+    position?: number
+    old_est_wait_mins?: number
     new_est_wait_mins: number
   }>
+  updated_tokens?: number
+  notifications_generated?: number
 }
 
 // ── Generic ─────────────────────────────────────────────
