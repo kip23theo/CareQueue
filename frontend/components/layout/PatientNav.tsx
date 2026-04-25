@@ -99,11 +99,11 @@ export function PatientNav({ myTokenId }: Props) {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 border-b border-surface-200/90 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <nav className="sticky top-0 z-40 border-b border-white/70 bg-white/70 shadow-[0_2px_8px_-6px_rgba(16,34,58,0.45)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.35rem] max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <Link href="/patient" className="group inline-flex min-w-0 items-center gap-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500 text-white shadow-sm shadow-brand-500/25">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(140deg,#22d3ee,#0e7490)] text-white">
                 <Activity size={15} />
               </span>
               <span className="min-w-0 leading-tight">
@@ -115,7 +115,7 @@ export function PatientNav({ myTokenId }: Props) {
             </Link>
           </div>
 
-          <div className="hidden items-center gap-1 rounded-full border border-surface-200 bg-white/80 p-1 md:flex">
+          <div className="hidden items-center gap-1 rounded-full border border-white/70 bg-white/65 p-1.5 md:flex">
             {quickLinks.map((item) => {
               const active = item.match(pathname)
               const Icon = item.icon
@@ -125,10 +125,10 @@ export function PatientNav({ myTokenId }: Props) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors',
+                    'inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-all',
                     active
-                      ? 'bg-brand-100 text-brand-700'
-                      : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                      ? 'bg-[linear-gradient(140deg,#d7f5fb,#e8f7ff)] text-brand-700'
+                      : 'text-surface-600 hover:bg-white hover:text-surface-900'
                   )}
                 >
                   <Icon size={13} />
@@ -142,7 +142,7 @@ export function PatientNav({ myTokenId }: Props) {
             {myTokenId && (
               <Button
                 asChild
-                className="h-9 rounded-full bg-brand-500 px-4 text-xs font-semibold text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600"
+                className="h-9 rounded-full bg-[linear-gradient(140deg,#0b8ba8,#0f6f86)] px-4 text-xs font-semibold text-white"
               >
                 <Link href={`/patient/token/${myTokenId}`}>
                   <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -157,7 +157,7 @@ export function PatientNav({ myTokenId }: Props) {
                   asChild
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full border-surface-300 text-surface-700"
+                  className="h-9 w-9 rounded-full border-white/70 bg-white/65 text-surface-700"
                 >
                   <Link href="/patient/notifications" aria-label="Alerts">
                     <Bell size={14} />
@@ -168,7 +168,7 @@ export function PatientNav({ myTokenId }: Props) {
                   asChild
                   variant="outline"
                   size="icon"
-                  className="h-9 w-9 rounded-full border-surface-300 text-surface-700"
+                  className="h-9 w-9 rounded-full border-white/70 bg-white/65 text-surface-700"
                 >
                   <Link href="/patient/feedback" aria-label="Rate Us">
                     <Star size={14} />
@@ -179,7 +179,7 @@ export function PatientNav({ myTokenId }: Props) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-9 rounded-full border-surface-300 px-2.5 text-surface-700 hover:bg-surface-100"
+                    className="h-9 rounded-full border-white/70 bg-white/65 px-2.5 text-surface-700 hover:bg-white"
                     onClick={() => setIsMenuOpen((prev) => !prev)}
                     aria-label="Open profile menu"
                   >
@@ -191,15 +191,15 @@ export function PatientNav({ myTokenId }: Props) {
                   </Button>
 
                   {isMenuOpen && (
-                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border border-surface-200 bg-white p-1.5 shadow-lg">
-                      <div className="px-3 py-2 border-b border-surface-100">
+                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border border-white/70 bg-white/92 p-1.5 backdrop-blur-sm">
+                      <div className="px-3 py-2 border-b border-surface-200/70">
                         <p className="text-xs font-semibold text-surface-900 truncate">{user?.name}</p>
                         <p className="text-[11px] text-surface-500 truncate">{user?.email}</p>
                       </div>
 
                       <Link
                         href="/patient/dashboard"
-                        className="mt-1 inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-surface-700 hover:bg-surface-100"
+                        className="mt-1 inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-surface-700 hover:bg-surface-100/80"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <LayoutDashboard size={14} />
@@ -209,7 +209,7 @@ export function PatientNav({ myTokenId }: Props) {
                       <button
                         type="button"
                         onClick={logout}
-                        className="inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+                        className="inline-flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50/80"
                       >
                         <LogOut size={14} />
                         Sign out
@@ -219,7 +219,7 @@ export function PatientNav({ myTokenId }: Props) {
                 </div>
               </>
             ) : (
-              <Button asChild variant="outline" className="h-9 rounded-full border-surface-300 px-4 text-xs">
+              <Button asChild variant="outline" className="h-9 rounded-full border-white/70 bg-white/65 px-4 text-xs">
                 <Link href="/auth/login">Sign in</Link>
               </Button>
             )}
@@ -228,7 +228,7 @@ export function PatientNav({ myTokenId }: Props) {
       </nav>
 
       {isPatient && (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200/90 bg-white/95 backdrop-blur md:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/70 bg-white/80 backdrop-blur-xl md:hidden">
           <div className="mx-auto grid h-16 max-w-6xl grid-cols-4 gap-1 px-2">
             {mobileLinks.map((item) => {
               const active = item.match(pathname)
@@ -241,8 +241,8 @@ export function PatientNav({ myTokenId }: Props) {
                   className={cn(
                     'inline-flex h-full flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold transition-colors',
                     active
-                      ? 'bg-brand-50 text-brand-700'
-                      : 'text-surface-500 hover:bg-surface-100 hover:text-surface-800'
+                      ? 'bg-[linear-gradient(140deg,#d7f5fb,#e8f7ff)] text-brand-700'
+                      : 'text-surface-500 hover:bg-white hover:text-surface-800'
                   )}
                 >
                   <Icon size={16} />

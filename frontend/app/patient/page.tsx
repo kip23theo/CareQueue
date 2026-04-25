@@ -4,135 +4,118 @@ import { useRouter } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowRight,
+  BellRing,
   CheckCircle2,
   Clock3,
-  Navigation,
+  Compass,
+  HeartPulse,
+  LocateFixed,
   ShieldCheck,
   Sparkles,
-  Star,
+  Stethoscope,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { getUser } from '@/lib/auth'
 
-type Metric = {
+type Stat = {
   label: string
   value: string
 }
 
-type FeaturePillar = {
+type QuickAction = {
+  title: string
+  desc: string
+  href: string
   icon: LucideIcon
-  title: string
-  desc: string
-  tone: string
-  iconTone: string
 }
 
-type JourneyStep = {
-  step: string
-  title: string
-  desc: string
-}
-
-type LiveClinic = {
+type PulseRow = {
   clinic: string
   wait: string
-  flow: string
+  state: string
 }
 
-type Voice = {
-  quote: string
-  name: string
-  detail: string
+type Step = {
+  index: string
+  title: string
+  desc: string
 }
 
-const trustMetrics: Metric[] = [
+type Value = {
+  title: string
+  desc: string
+  icon: LucideIcon
+}
+
+const stats: Stat[] = [
+  { label: 'Queue updates', value: '< 30 sec' },
+  { label: 'Clinics online', value: '450+' },
+  { label: 'Patients served/day', value: '12K+' },
+]
+
+const quickActions: QuickAction[] = [
   {
-    label: 'Queue refresh',
-    value: '< 30s',
+    title: 'Find Nearby Clinics',
+    desc: 'Compare live wait times and pick the fastest option.',
+    href: '/patient/clinics',
+    icon: Compass,
   },
   {
-    label: 'Connected clinics',
-    value: '450+',
-  },
-  {
-    label: 'Patients/day',
-    value: '12K+',
+    title: 'Explore Doctors',
+    desc: 'Search by specialty and review current availability.',
+    href: '/patient/doctors',
+    icon: Stethoscope,
   },
 ]
 
-const experiencePillars: FeaturePillar[] = [
+const pulseRows: PulseRow[] = [
+  { clinic: 'GreenLife Clinic', wait: '11 min', state: 'Steady' },
+  { clinic: 'CityCare Multispecialty', wait: '17 min', state: 'Busy' },
+  { clinic: 'Sunrise Family Practice', wait: '8 min', state: 'Fast' },
+]
+
+const steps: Step[] = [
   {
+    index: '01',
+    title: 'Select a clinic',
+    desc: 'Check queue movement, ratings, and distance in one screen.',
+  },
+  {
+    index: '02',
+    title: 'Book your token',
+    desc: 'Join in seconds and skip standing in physical lines.',
+  },
+  {
+    index: '03',
+    title: 'Arrive just in time',
+    desc: 'Get real-time updates until your consultation call.',
+  },
+]
+
+const values: Value[] = [
+  {
+    title: 'Live movement',
+    desc: 'Queue state refreshes continuously so your ETA stays realistic.',
     icon: Clock3,
-    title: 'Minute-level wait forecasting',
-    desc: 'Queue velocity updates constantly so your ETA stays realistic while you travel.',
-    tone: 'border-sky-200 bg-gradient-to-br from-sky-50 to-white',
-    iconTone: 'bg-sky-500',
   },
   {
-    icon: Navigation,
-    title: 'Smart clinic discovery',
-    desc: 'Compare nearby options by travel time, specialty, and live queue pressure.',
-    tone: 'border-brand-200 bg-gradient-to-br from-brand-50 to-white',
-    iconTone: 'bg-brand-500',
+    title: 'Reliable alerts',
+    desc: 'Notifications keep you informed when your turn is close.',
+    icon: BellRing,
   },
   {
+    title: 'Location smart',
+    desc: 'See clinics near you only when location is needed.',
+    icon: LocateFixed,
+  },
+  {
+    title: 'Safer process',
+    desc: 'Less crowding in waiting rooms and smoother patient flow.',
     icon: ShieldCheck,
-    title: 'Reliable token tracking',
-    desc: 'Track status from waiting to consultation without repeated calls to reception.',
-    tone: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
-    iconTone: 'bg-emerald-500',
-  },
-]
-
-const careJourney: JourneyStep[] = [
-  {
-    step: '01',
-    title: 'Pick your clinic',
-    desc: 'Compare nearby options by specialty, travel time, and live queue pressure.',
-  },
-  {
-    step: '02',
-    title: 'Join digitally',
-    desc: 'Get your token in seconds and skip standing in physical lines.',
-  },
-  {
-    step: '03',
-    title: 'Arrive at the right minute',
-    desc: 'Live updates keep you synced so you reach just before your call.',
-  },
-]
-
-const liveClinics: LiveClinic[] = [
-  {
-    clinic: 'GreenLife Clinic',
-    wait: '11 min',
-    flow: 'Steady flow',
-  },
-  {
-    clinic: 'CityCare Multispecialty',
-    wait: '17 min',
-    flow: 'Slightly busy',
-  },
-  {
-    clinic: 'Sunrise Family Practice',
-    wait: '8 min',
-    flow: 'Fast movement',
-  },
-]
-
-const patientVoices: Voice[] = [
-  {
-    quote: 'I only leave home when my token is close now. It has saved me hours every week.',
-    name: 'Asha R.',
-    detail: 'Parent, Pune',
-  },
-  {
-    quote: 'The live queue view is accurate enough to plan around work breaks without stress.',
-    name: 'Ravi M.',
-    detail: 'Consultant, Bengaluru',
   },
 ]
 
@@ -142,32 +125,33 @@ export default function PatientHome() {
   const isPatient = user?.role === 'patient'
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[radial-gradient(circle_at_12%_8%,rgba(20,184,166,0.16),transparent_28%),radial-gradient(circle_at_84%_20%,rgba(56,189,248,0.16),transparent_30%),linear-gradient(180deg,#f8fbff_0%,#f5fdfb_52%,#ffffff_100%)]">
-      <section className="relative overflow-hidden border-b border-surface-200/70">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-brand-100/50 to-transparent" />
-        <div className="pointer-events-none absolute -right-24 top-16 h-56 w-56 rounded-full bg-brand-300/30 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-6 h-56 w-56 rounded-full bg-cyan-200/30 blur-3xl" />
+    <div className="relative min-h-[calc(100vh-70px)] pb-14">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_15%_10%,rgba(34,211,238,0.12),transparent_38%),radial-gradient(circle_at_85%_15%,rgba(37,99,235,0.1),transparent_38%)]"
+      />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:pb-16 lg:pt-16">
-          <div>
-            <Badge className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
-              <Sparkles size={13} />
-              Smart Queue for Patients
+      <section className="relative mx-auto max-w-6xl px-4 pb-8 pt-8 sm:px-6 lg:px-8 lg:pt-11">
+        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="border-white/80 bg-white/76 p-6 md:p-8">
+            <Badge className="mb-4 rounded-full border border-brand-200 bg-brand-50 text-brand-700">
+              <Sparkles size={12} />
+              Patient Portal
             </Badge>
 
-            <h1 className="font-heading text-4xl font-bold leading-tight text-surface-900 sm:text-5xl lg:text-[3.2rem] lg:leading-[1.06]">
-              Reach your clinic at the
-              <span className="block text-brand-700">right minute</span>
+            <h1 className="text-4xl font-bold leading-tight text-surface-900 md:text-[3rem] md:leading-[1.05]">
+              Skip the crowd.
+              <span className="block text-brand-700">Keep your day on track.</span>
             </h1>
 
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-surface-600 sm:text-lg">
-              CareQueue helps you find nearby clinics and doctors, join the line digitally, and arrive just before your turn.
+            <p className="mt-4 max-w-xl text-[1.05rem] leading-relaxed text-surface-600">
+              CareQueue helps you pick the right clinic, join digitally, and arrive only when your turn is near.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button
                 onClick={() => router.push('/patient/clinics')}
-                className="h-11 rounded-xl bg-brand-500 px-6 text-sm font-semibold text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600"
+                className="h-11 rounded-xl px-5 text-sm"
               >
                 Explore clinics
                 <ArrowRight size={16} />
@@ -176,7 +160,7 @@ export default function PatientHome() {
               <Button
                 onClick={() => router.push('/patient/doctors')}
                 variant="outline"
-                className="h-11 rounded-xl border-surface-300 bg-white px-5 text-sm font-semibold text-surface-700 hover:bg-surface-100"
+                className="h-11 rounded-xl border-surface-300 bg-white px-5 text-sm"
               >
                 Find doctors
               </Button>
@@ -184,186 +168,148 @@ export default function PatientHome() {
               {isPatient && (
                 <Button
                   onClick={() => router.push('/patient/dashboard')}
-                  variant="outline"
-                  className="h-11 rounded-xl border-surface-300 bg-white px-5 text-sm font-semibold text-surface-700 hover:bg-surface-100"
+                  variant="ghost"
+                  className="h-11 rounded-xl px-4 text-sm text-surface-700"
                 >
                   Open dashboard
                 </Button>
               )}
             </div>
 
-            <div className="mt-6 flex items-center gap-2 text-sm text-surface-600">
-              <CheckCircle2 size={15} className="text-emerald-600" />
-              Location is only requested when you open clinics or doctors search.
+            <div className="mt-6 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+              <CheckCircle2 size={14} />
+              Location access is requested only for clinic/doctor discovery.
             </div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
-              {trustMetrics.map((item) => (
-                <Card
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {stats.map((item) => (
+                <div
                   key={item.label}
-                  className="rounded-2xl border border-surface-200/90 bg-white/85 px-4 py-3"
+                  className="rounded-xl border border-surface-200 bg-white/82 px-4 py-3"
                 >
-                  <p className="text-xs uppercase tracking-[0.08em] text-surface-500">{item.label}</p>
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-surface-500">
+                    {item.label}
+                  </p>
                   <p className="mt-1 text-xl font-bold text-surface-900">{item.value}</p>
-                </Card>
+                </div>
               ))}
             </div>
-          </div>
+          </Card>
 
-          <Card className="rounded-[1.75rem] border border-brand-100/80 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(20,184,166,0.45)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Live Snapshot</p>
-            <h2 className="mt-2 text-2xl font-bold text-surface-900">Today around you</h2>
-            <p className="mt-1 text-sm text-surface-600">Quick glance at real queue movement in your area.</p>
+          <Card className="border-white/80 bg-white/78 p-6 md:p-7">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+              Live Queue Pulse
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-surface-900">Around your area</h2>
+            <p className="mt-1 text-sm text-surface-600">
+              Snapshot of current movement to help you pick quickly.
+            </p>
 
-            <div className="mt-6 space-y-3">
-              {liveClinics.map((item) => (
+            <div className="mt-5 space-y-2.5">
+              {pulseRows.map((row) => (
                 <div
-                  key={item.clinic}
-                  className="flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50/80 px-4 py-3"
+                  key={row.clinic}
+                  className="flex items-center justify-between rounded-xl border border-surface-200 bg-white px-4 py-3"
                 >
-                  <div>
-                    <p className="text-sm font-semibold text-surface-900">{item.clinic}</p>
-                    <p className="text-xs text-surface-500">{item.flow}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-surface-900">{row.clinic}</p>
+                    <p className="text-xs text-surface-500">{row.state} queue</p>
                   </div>
-                  <div className="rounded-full bg-brand-100 px-3 py-1 text-xs font-semibold text-brand-700">
-                    {item.wait}
-                  </div>
+                  <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700">
+                    {row.wait}
+                  </span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-800">
-              81% of patients arrive within 10 minutes of consultation call.
+            <div className="mt-5 rounded-xl border border-surface-200 bg-surface-50/70 p-4">
+              <p className="text-xs uppercase tracking-[0.08em] text-surface-500">Today</p>
+              <p className="mt-1 text-sm text-surface-700">
+                81% of patients reached the clinic within 10 minutes of consultation call.
+              </p>
             </div>
           </Card>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:grid lg:grid-cols-[1fr_1fr] lg:gap-6 lg:px-8">
-        <Card className="rounded-[1.5rem] border border-surface-200 bg-white/90 p-6 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">How It Works</p>
-          <h2 className="mt-2 text-2xl font-bold text-surface-900 md:text-[1.75rem]">
-            A simple 3-step flow
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-surface-600">
-            Minimal taps, less waiting room time, and better predictability for your day.
-          </p>
-
-          <div className="mt-6 space-y-3">
-            {careJourney.map((item) => (
-              <div key={item.step} className="rounded-2xl border border-surface-200 bg-surface-50/75 p-4">
-                <div className="mb-2 inline-flex rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-700">
-                  Step {item.step}
-                </div>
-                <p className="text-sm font-semibold text-surface-900">{item.title}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-surface-600">{item.desc}</p>
-              </div>
-            ))}
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <Card className="border-white/80 bg-white/75 p-6 md:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">
+                Quick Start
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-surface-900">What would you like to do?</h2>
+            </div>
+            <HeartPulse className="mt-1 text-brand-600" size={20} />
           </div>
-        </Card>
 
-        <Card className="mt-6 rounded-[1.5rem] border border-surface-200 bg-white/90 p-6 md:p-7 lg:mt-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Core Experience</p>
-          <h2 className="mt-2 text-2xl font-bold text-surface-900 md:text-[1.75rem]">
-            Designed to feel calm and clear
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-surface-600">
-            The app keeps you informed without overwhelming you with noise.
-          </p>
-
-          <div className="mt-6 space-y-3">
-            {experiencePillars.map((pillar) => {
-              const Icon = pillar.icon
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {quickActions.map((item) => {
+              const Icon = item.icon
               return (
-                <Card key={pillar.title} className={cn('rounded-2xl border p-4', pillar.tone)}>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={cn(
-                        'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white shadow-sm',
-                        pillar.iconTone
-                      )}
-                    >
-                      <Icon size={17} />
-                    </span>
-                    <div>
-                      <h3 className="text-sm font-semibold text-surface-900">{pillar.title}</h3>
-                      <p className="mt-1.5 text-sm leading-relaxed text-surface-600">{pillar.desc}</p>
-                    </div>
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  className={cn(
+                    'group rounded-xl border border-surface-200 bg-white px-4 py-4 text-left transition-colors',
+                    'hover:border-brand-300 hover:bg-brand-50/45'
+                  )}
+                >
+                  <div className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                    <Icon size={16} />
                   </div>
-                </Card>
+                  <p className="text-sm font-semibold text-surface-900">{item.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-surface-600">{item.desc}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-700">
+                    Open
+                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </button>
               )
             })}
           </div>
         </Card>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 lg:px-8">
-        <Card className="rounded-[1.75rem] border border-brand-200 bg-gradient-to-br from-white via-brand-50/50 to-cyan-50/70 p-6 md:p-8">
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Patient Voices</p>
-              <h2 className="mt-1 text-3xl font-bold tracking-tight text-surface-900">
-                Trusted by busy families
-              </h2>
+      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="border-white/80 bg-white/75 p-6 md:p-7">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">How It Works</p>
+            <h2 className="mt-2 text-2xl font-bold text-surface-900">Simple 3-step flow</h2>
+            <div className="mt-5 space-y-3">
+              {steps.map((item) => (
+                <div key={item.index} className="rounded-xl border border-surface-200 bg-white p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-600">
+                    Step {item.index}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-surface-900">{item.title}</p>
+                  <p className="mt-1 text-sm text-surface-600">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {patientVoices.map((item) => (
-                  <div key={item.name} className="rounded-2xl border border-surface-200 bg-white/90 p-4">
-                    <div className="mb-2 flex items-center gap-1 text-amber-500">
-                      <Star size={14} fill="currentColor" />
-                      <Star size={14} fill="currentColor" />
-                      <Star size={14} fill="currentColor" />
-                      <Star size={14} fill="currentColor" />
-                      <Star size={14} fill="currentColor" />
+          <Card className="border-white/80 bg-white/75 p-6 md:p-7">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-700">Why CareQueue</p>
+            <h2 className="mt-2 text-2xl font-bold text-surface-900">Built for calm appointments</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {values.map((item) => {
+                const Icon = item.icon
+                return (
+                  <div key={item.title} className="rounded-xl border border-surface-200 bg-white p-4">
+                    <div className="mb-3 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                      <Icon size={16} />
                     </div>
-                    <p className="text-sm leading-relaxed text-surface-700">&ldquo;{item.quote}&rdquo;</p>
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-[0.06em] text-surface-500">
-                      {item.name} · {item.detail}
-                    </p>
+                    <p className="text-sm font-semibold text-surface-900">{item.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-surface-600">{item.desc}</p>
                   </div>
-                ))}
-              </div>
+                )
+              })}
             </div>
-
-            <div className="flex h-full flex-col justify-between rounded-3xl border border-brand-200 bg-white/85 p-5 md:p-6">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-brand-700">Start Now</p>
-                <h3 className="mt-1 text-2xl font-bold text-surface-900">Pick your clinic in under a minute</h3>
-                <p className="mt-2 text-sm leading-relaxed text-surface-600">
-                  Compare wait times, choose a clinic or doctor, and join instantly.
-                </p>
-              </div>
-
-              <div className="mt-5 space-y-2">
-                <Button
-                  onClick={() => router.push('/patient/clinics')}
-                  className="h-11 w-full rounded-xl bg-brand-500 text-sm font-semibold text-white hover:bg-brand-600"
-                >
-                  Explore clinics near me
-                  <ArrowRight size={16} />
-                </Button>
-
-                <Button
-                  onClick={() => router.push('/patient/doctors')}
-                  variant="outline"
-                  className="h-11 w-full rounded-xl border-surface-300 bg-white text-sm font-semibold text-surface-700 hover:bg-surface-100"
-                >
-                  Find doctors near me
-                </Button>
-
-                {isPatient && (
-                  <Button
-                    onClick={() => router.push('/patient/dashboard')}
-                    variant="outline"
-                    className="h-11 w-full rounded-xl border-surface-300 bg-white text-sm font-semibold text-surface-700 hover:bg-surface-100"
-                  >
-                    Open my dashboard
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </section>
     </div>
   )

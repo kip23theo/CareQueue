@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { DM_Sans, Inter } from "next/font/google";
+import { Manrope, Sora } from "next/font/google";
 import AICopilotMount from "@/components/ai/AICopilotMount";
 import { SonnerProvider } from "@/components/providers/SonnerProvider";
 import "./globals.css";
 
-const dmSans = DM_Sans({
+const sora = Sora({
   subsets: ["latin"],
   variable: "--font-heading",
   display: "swap",
 });
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
@@ -30,8 +30,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body
-        className={`min-h-full flex flex-col antialiased ${dmSans.variable} ${inter.variable}`}
+        className={`relative min-h-full flex flex-col antialiased ${sora.variable} ${manrope.variable}`}
       >
+        <div aria-hidden className="global-ambient">
+          <div className="global-ambient__blob global-ambient__blob--one" />
+          <div className="global-ambient__blob global-ambient__blob--two" />
+          <div className="global-ambient__blob global-ambient__blob--three" />
+          <div className="global-ambient__mesh" />
+        </div>
         {children}
         <SonnerProvider />
         <AICopilotMount />

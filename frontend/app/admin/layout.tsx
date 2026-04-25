@@ -22,10 +22,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <div className="flex min-h-screen bg-surface-100">
+    <div className="flex min-h-screen bg-transparent">
       <SidebarWrapper />
       <TopRightFeedbackButton href="/admin/feedback" />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="relative flex-1 overflow-auto">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.09),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.28),transparent)]"
+        />
+        {children}
+      </main>
     </div>
   )
 }

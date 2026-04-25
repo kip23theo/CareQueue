@@ -78,10 +78,10 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
   return (
     <Card
       className={cn(
-        'relative rounded-2xl border bg-white p-5 transition-all duration-200',
-        'hover:shadow-md hover:border-brand-300 cursor-pointer',
+        'relative rounded-2xl border bg-white/72 p-5 transition-all duration-200',
+        'cursor-pointer hover:border-brand-300',
         isBestMatch
-          ? 'border-brand-400 shadow-brand-100 shadow-md ring-1 ring-brand-400/30'
+          ? 'border-brand-400 ring-1 ring-brand-400/30'
           : 'border-surface-200',
         !clinic.is_open && 'opacity-60'
       )}
@@ -90,7 +90,7 @@ export function ClinicCard({ clinic, userLocation, onSelect, onBook, isBestMatch
       {/* Best match badge */}
       {isBestMatch && (
         <div className="absolute -top-3 left-4">
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-500 text-white shadow-sm">
+          <span className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-semibold text-white">
             <Zap size={10} className="fill-white" />
             AI Best Match
           </span>

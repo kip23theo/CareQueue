@@ -18,9 +18,15 @@ function SuperAdminLayoutInner({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <div className="flex min-h-screen bg-surface-100">
+    <div className="flex min-h-screen bg-transparent">
       <StaffSidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="relative flex-1 overflow-auto">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_0%,rgba(37,99,235,0.1),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.28),transparent)]"
+        />
+        {children}
+      </main>
     </div>
   )
 }

@@ -47,7 +47,7 @@ const NEARBY_RADIUS_KM = NEARBY_RADIUS_METERS / 1000
 
 function SkeletonCard() {
   return (
-    <Card className="rounded-2xl border border-surface-200 bg-white p-5">
+    <Card className="rounded-2xl border border-surface-200 bg-white/70 p-5">
       <div className="skeleton h-5 w-2/3 rounded-lg mb-3" />
       <div className="skeleton h-4 w-full rounded-lg mb-4" />
       <div className="flex gap-2 mb-4">
@@ -233,7 +233,7 @@ export default function ClinicsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-4">
       {!location && (
-        <Card className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm mb-5">
+        <Card className="mb-5 rounded-3xl border border-surface-200 bg-white/72 p-5">
           <Badge className="rounded-full bg-brand-100 text-brand-700 border-transparent text-xs mb-3">
             Select Location
           </Badge>
@@ -277,10 +277,10 @@ export default function ClinicsPage() {
                 setLocationError(null)
               }}
               placeholder="Search location..."
-              className="h-10 rounded-xl border-surface-200 bg-white px-3 text-sm"
+              className="h-10 rounded-xl border-surface-200 bg-white/70 px-3 text-sm"
             />
             {shouldShowLocationDropdown && (
-              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-surface-200 bg-white shadow-lg p-1 max-h-56 overflow-y-auto">
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-56 overflow-y-auto rounded-xl border border-surface-200 bg-white/92 p-1 backdrop-blur-sm">
                 {isLocationSearchLoading ? (
                   <div className="px-2 py-2 text-xs text-surface-500 flex items-center gap-2">
                     <Loader2 size={12} className="animate-spin" />
@@ -310,8 +310,8 @@ export default function ClinicsPage() {
       )}
 
       {location && (
-        <div className="sticky top-14 z-30 bg-surface-50 py-3 space-y-3">
-          <Card className="rounded-2xl border border-surface-200 bg-white px-3 py-3 shadow-sm">
+        <div className="sticky top-14 z-30 space-y-3 bg-transparent py-3">
+          <Card className="rounded-2xl border border-surface-200 bg-white/70 px-3 py-3">
             <div className="flex items-center gap-2 text-xs text-surface-500 mb-2">
               <MapPin size={13} className="text-brand-500 shrink-0" />
               <p className="truncate">
@@ -336,10 +336,10 @@ export default function ClinicsPage() {
                     setLocationError(null)
                   }}
                   placeholder="Search location..."
-                  className="h-10 rounded-xl border-surface-200 bg-white px-3 text-sm"
+                  className="h-10 rounded-xl border-surface-200 bg-white/70 px-3 text-sm"
                 />
                 {shouldShowLocationDropdown && (
-                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-xl border border-surface-200 bg-white shadow-lg p-1 max-h-56 overflow-y-auto">
+                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-56 overflow-y-auto rounded-xl border border-surface-200 bg-white/92 p-1 backdrop-blur-sm">
                     {isLocationSearchLoading ? (
                       <div className="px-2 py-2 text-xs text-surface-500 flex items-center gap-2">
                         <Loader2 size={12} className="animate-spin" />
@@ -392,7 +392,7 @@ export default function ClinicsPage() {
                   setVisibleCount(6)
                 }}
                 placeholder="Search clinics..."
-                className="h-10 rounded-xl border-surface-200 bg-white pl-9 pr-4 text-sm"
+                className="h-10 rounded-xl border-surface-200 bg-white/70 pl-9 pr-4 text-sm"
               />
             </div>
             <Select
@@ -402,7 +402,7 @@ export default function ClinicsPage() {
                 setVisibleCount(6)
               }}
             >
-              <SelectTrigger className="w-36 h-10 rounded-xl border-surface-200 bg-white text-sm text-surface-700">
+              <SelectTrigger className="h-10 w-36 rounded-xl border-surface-200 bg-white/70 text-sm text-surface-700">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -417,7 +417,7 @@ export default function ClinicsPage() {
             <Button
               onClick={openAICopilotDialog}
               size="sm"
-              className="shrink-0 h-8 px-3 rounded-full bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 shadow-sm"
+              className="h-8 shrink-0 rounded-full bg-brand-500 px-3 text-xs font-semibold text-white hover:bg-brand-600"
             >
               <Sparkles size={12} />
               Ask AI
@@ -437,7 +437,7 @@ export default function ClinicsPage() {
                   'shrink-0 h-8 px-3 rounded-full text-xs font-medium transition-all',
                   specFilter.includes(spec)
                     ? 'bg-brand-500 text-white'
-                    : 'bg-white border border-surface-200 text-surface-600 hover:border-brand-300'
+                    : 'border border-surface-200 bg-white/68 text-surface-600 hover:border-brand-300'
                 )}
               >
                 {spec}
@@ -502,7 +502,7 @@ export default function ClinicsPage() {
       )}
 
       <Dialog open={isAuthDialogOpen} onOpenChange={handleAuthDialogChange}>
-        <DialogContent className="max-w-md rounded-2xl border border-surface-200 bg-white">
+        <DialogContent className="max-w-md rounded-2xl border border-surface-200 bg-white/92">
           <DialogHeader>
             <DialogTitle>Register as patient to book</DialogTitle>
             <DialogDescription>

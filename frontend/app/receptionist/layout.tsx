@@ -21,9 +21,15 @@ function ReceptionistLayoutInner({ children }: { children: React.ReactNode }) {
   }, [router])
 
   return (
-    <div className="flex min-h-screen bg-surface-100">
+    <div className="flex min-h-screen bg-transparent">
       <SidebarWrapper />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="relative flex-1 overflow-auto">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_84%_0%,rgba(34,211,238,0.1),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.26),transparent)]"
+        />
+        {children}
+      </main>
     </div>
   )
 }
