@@ -6,6 +6,7 @@ import { usePatient } from '@/context/PatientContext'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { getUser } from '@/lib/auth'
 import { MapPin, Loader2, Zap, Clock, Smartphone } from 'lucide-react'
 
 const CITY_PRESETS = [
@@ -25,6 +26,8 @@ const features = [
 export default function PatientHome() {
   const router = useRouter()
   const { setLocation } = usePatient()
+  const user = getUser()
+  const isPatient = user?.role === 'patient'
   const [isLocating, setIsLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
@@ -64,6 +67,15 @@ export default function PatientHome() {
           <p className="text-surface-500 text-base leading-relaxed">
             See live wait times, join the queue remotely,<br />and get AI-powered recommendations.
           </p>
+          {isPatient && (
+            <Button
+              onClick={() => router.push('/patient/dashboard')}
+              variant="outline"
+              className="mt-4 rounded-full border-brand-200 text-brand-700 hover:bg-brand-50"
+            >
+              Open My Dashboard
+            </Button>
+          )}
         </div>
 
         {/* Location CTA */}

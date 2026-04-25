@@ -6,10 +6,11 @@ from app.models.enums import UserRole
 
 
 class User(TimestampMixin, Document):
-    clinic_id: PydanticObjectId
+    clinic_id: PydanticObjectId | None = None
     role: UserRole
     name: str
     email: str
+    phone: str | None = None
     password_hash: str
     is_active: bool = True
 

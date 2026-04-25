@@ -2,8 +2,9 @@ export interface AuthUser {
   id: string
   name: string
   email: string
-  role: 'admin' | 'doctor' | 'receptionist'
-  clinic_id: string
+  role: 'super_admin' | 'admin' | 'doctor' | 'receptionist' | 'patient'
+  clinic_id: string | null
+  phone?: string | null
 }
 
 export function getUser(): AuthUser | null {

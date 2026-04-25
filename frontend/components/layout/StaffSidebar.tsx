@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard, Users, BarChart3, Bell,
   Settings, ClipboardList, Stethoscope,
-  UserCog, LogOut, ChevronRight
+  UserCog, LogOut, ChevronRight, Star
 } from 'lucide-react'
 
 interface NavItem {
@@ -24,12 +24,14 @@ const adminNav: NavItem[] = [
   { href: '/admin/queue', label: 'Live Queue', icon: <ClipboardList size={18} /> },
   { href: '/admin/doctors', label: 'Doctors', icon: <Stethoscope size={18} /> },
   { href: '/admin/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+  { href: '/admin/reviews', label: 'Reviews', icon: <Star size={18} /> },
   { href: '/admin/notifications', label: 'Notifications', icon: <Bell size={18} /> },
   { href: '/admin/settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
 const doctorNav: NavItem[] = [
   { href: '/doctor', label: 'My Queue', icon: <ClipboardList size={18} /> },
+  { href: '/doctor/reviews', label: 'Reviews', icon: <Star size={18} /> },
   { href: '/doctor/settings', label: 'Settings', icon: <Settings size={18} /> },
 ]
 
@@ -37,14 +39,27 @@ const receptionistNav: NavItem[] = [
   { href: '/receptionist', label: 'Queue Board', icon: <ClipboardList size={18} /> },
   { href: '/receptionist/add', label: 'Add Walk-in', icon: <Users size={18} /> },
   { href: '/receptionist/search', label: 'Search Patient', icon: <UserCog size={18} /> },
+  { href: '/receptionist/reviews', label: 'Reviews', icon: <Star size={18} /> },
 ]
 
-const navMap = { admin: adminNav, doctor: doctorNav, receptionist: receptionistNav }
+const superAdminNav: NavItem[] = [
+  { href: '/super-admin', label: 'Platform', icon: <LayoutDashboard size={18} /> },
+]
+
+const navMap = {
+  super_admin: superAdminNav,
+  admin: adminNav,
+  doctor: doctorNav,
+  receptionist: receptionistNav,
+  patient: [],
+}
 
 const roleColors = {
+  super_admin: 'bg-amber-100 text-amber-700',
   admin: 'bg-purple-100 text-purple-700',
   doctor: 'bg-brand-100 text-brand-700',
   receptionist: 'bg-blue-100 text-blue-700',
+  patient: 'bg-surface-100 text-surface-700',
 }
 
 interface Props {
@@ -109,9 +124,11 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
 
       {/* SSE status + logout */}
       <div className="px-5 py-4 border-t border-white/10 space-y-3">
-        <div className="flex items-center gap-2">
-          <SSEStatusDot status={sseStatus} showLabel />
-        </div>
+        {user.role !== 'super_admin' && (
+          <div className="flex items-center gap-2">
+            <SSEStatusDot status={sseStatus} showLabel />
+          </div>
+        )}
         <Button
           onClick={logout}
           variant="ghost"

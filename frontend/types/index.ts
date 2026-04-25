@@ -11,9 +11,56 @@ export interface LoginResponse {
     id: string
     name: string
     email: string
-    role: 'admin' | 'doctor' | 'receptionist'
-    clinic_id: string
+    role: 'super_admin' | 'admin' | 'doctor' | 'receptionist' | 'patient'
+    clinic_id: string | null
+    phone?: string | null
   }
+}
+
+export interface RegisterPatientRequest {
+  name: string
+  email: string
+  phone?: string
+  password: string
+}
+
+export interface RegisterPatientResponse {
+  id: string
+  name: string
+  email: string
+  role: 'patient'
+  phone?: string | null
+}
+
+export interface RegisterClinicStaffInput {
+  name: string
+  email: string
+  password: string
+  role: 'doctor' | 'receptionist'
+  specialization?: string
+  avg_consult_mins?: number
+}
+
+export interface RegisterClinicRequest {
+  clinic_name: string
+  address: string
+  phone: string
+  latitude: number
+  longitude: number
+  specializations?: string[]
+  opening_hours?: Record<string, unknown>
+  avg_consult_time?: number
+  delay_buffer?: number
+  admin_name: string
+  admin_email: string
+  admin_password: string
+  staff?: RegisterClinicStaffInput[]
+}
+
+export interface RegisterClinicResponse {
+  message: string
+  clinic_id: string
+  verification_status: 'pending' | 'approved' | 'rejected'
 }
 
 // ── Clinic ──────────────────────────────────────────────
@@ -44,6 +91,8 @@ export interface Clinic {
   is_open: boolean
   rating: number                  // 1.0 – 5.0
   delay_buffer: number            // extra minutes
+  verification_status?: 'pending' | 'approved' | 'rejected'
+  rejection_reason?: string | null
   // Computed live fields (returned by /clinics/nearby)
   distance_km?: number
   queue_length?: number
@@ -189,7 +238,10 @@ export interface Notification {
 export interface Review {
   _id: string
   clinic_id: string
-  token_id: string
+  doctor_id?: string | null
+  patient_user_id?: string | null
+  token_id?: string | null
+  target_type: 'clinic' | 'doctor'
   rating: number
   comment: string
   created_at: string
@@ -198,9 +250,73 @@ export interface Review {
 
 export interface AddReviewRequest {
   clinic_id: string
-  token_id: string
+  target_type: 'clinic' | 'doctor'
+  doctor_id?: string
+  patient_user_id?: string
+  token_id?: string
   rating: number
   comment: string
+  patient_name?: string
+}
+
+export interface DoctorRatingSummary {
+  doctor_id: string
+  doctor_name: string
+  average_rating: number
+  total_reviews: number
+}
+
+export interface ClinicReviewSummary {
+  clinic_id: string
+  clinic_average_rating: number
+  total_clinic_reviews: number
+  total_doctor_reviews: number
+  doctor_summaries: DoctorRatingSummary[]
+}
+
+// ── Patient medical records ─────────────────────────────
+export interface MedicalHistoryEntry {
+  id: string
+  patient_user_id: string
+  clinic_id?: string | null
+  doctor_id?: string | null
+  title: string
+  diagnosis: string
+  notes: string
+  prescriptions: string[]
+  vitals: Record<string, string>
+  visit_date: string
+  follow_up_date?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MedicalDocument {
+  id: string
+  patient_user_id: string
+  clinic_id?: string | null
+  medical_history_id?: string | null
+  uploaded_by_user_id?: string | null
+  title: string
+  document_type: 'lab_report' | 'prescription' | 'discharge_summary' | 'scan' | 'other'
+  file_url: string
+  description: string
+  tags: string[]
+  issued_on?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PatientDashboardResponse {
+  patient: {
+    id: string
+    name: string
+    email: string
+    phone?: string | null
+    role: 'patient'
+  }
+  medical_history: MedicalHistoryEntry[]
+  documents: MedicalDocument[]
 }
 
 // ── AI / Prediction ─────────────────────────────────────
@@ -271,4 +387,58 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   per_page: number
+}
+
+export interface SuperAdminOverview {
+  clinics: {
+    total: number
+    pending: number
+    approved: number
+    rejected: number
+  }
+  users: {
+    total: number
+    super_admin: number
+    admin: number
+    doctor: number
+    receptionist: number
+  }
+}
+
+export interface SuperAdminClinic {
+  id: string
+  name: string
+  address: string
+  phone: string
+  latitude: number | null
+  longitude: number | null
+  verification_status: 'pending' | 'approved' | 'rejected'
+  verified_at?: string | null
+  rejection_reason?: string | null
+  created_at: string
+  updated_at: string
+  admin?: {
+    id: string
+    name: string
+    email: string
+  } | null
+  user_count: number
+}
+
+export interface SuperAdminUser {
+  id: string
+  name: string
+  email: string
+  role: 'super_admin' | 'admin' | 'doctor' | 'receptionist' | 'patient'
+  clinic_id: string | null
+  clinic_name: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface VerifyClinicRequest {
+  status: 'approved' | 'rejected'
+  reason?: string
+  verified_by_user_id?: string
 }

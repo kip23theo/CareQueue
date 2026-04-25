@@ -8,22 +8,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import axios from 'axios'
 import { Eye, EyeOff, Activity, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-type Role = 'admin' | 'doctor' | 'receptionist'
-
-const roleLabels: Record<Role, string> = {
-  admin: 'Admin',
-  doctor: 'Doctor',
-  receptionist: 'Receptionist',
-}
-
 export default function LoginPage() {
   const router = useRouter()
-  const [selectedRole, setSelectedRole] = useState<Role>('doctor')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -38,9 +28,11 @@ export default function LoginPage() {
       const { data } = await authApi.login({ email, password })
       saveAuth(data.access_token, data.user)
       const role = data.user.role
-      if (role === 'admin') router.push('/admin')
+      if (role === 'super_admin') router.push('/super-admin')
+      else if (role === 'admin') router.push('/admin')
       else if (role === 'doctor') router.push('/doctor')
-      else router.push('/receptionist')
+      else if (role === 'receptionist') router.push('/receptionist')
+      else router.push('/patient/dashboard')
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.detail ?? 'Invalid email or password')
@@ -54,15 +46,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel */}
       <div className="hidden lg:flex flex-col w-1/2 bg-surface-900 relative overflow-hidden">
-        {/* Background decoration */}
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-brand-500/10 blur-3xl" />
           <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-brand-400/8 blur-3xl" />
         </div>
 
-        {/* Floating queue cards */}
         <div className="absolute top-32 right-8 space-y-3 opacity-60">
           {[
             { token: 'A05', status: 'Now Serving', color: 'text-brand-400' },
@@ -95,15 +84,13 @@ export default function LoginPage() {
             href="/patient"
             className="text-sm text-brand-400 hover:text-brand-300 transition-colors inline-flex items-center gap-1"
           >
-            For patients → Visit patient portal
+            For patients &rarr; Visit patient portal
           </Link>
         </div>
       </div>
 
-      {/* Right panel */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
               <Activity size={16} className="text-white" />
@@ -112,24 +99,8 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold font-heading text-surface-900 mb-1">Welcome back</h1>
-          <p className="text-surface-500 text-sm mb-8">Sign in to your staff account</p>
+          <p className="text-surface-500 text-sm mb-8">Sign in to your account</p>
 
-          {/* Role selector */}
-          <Tabs value={selectedRole} onValueChange={(value) => setSelectedRole(value as Role)} className="mb-6">
-            <TabsList className="w-full h-auto rounded-xl bg-surface-100 p-1">
-              {(Object.keys(roleLabels) as Role[]).map((role) => (
-                <TabsTrigger
-                  key={role}
-                  value={role}
-                  className="flex-1 rounded-lg py-1.5 data-[state=active]:bg-white data-[state=active]:text-surface-900 text-surface-500"
-                >
-                  {roleLabels[role]}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="login-email" className="block text-sm font-medium text-surface-700 mb-1.5">Email</Label>
@@ -138,7 +109,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="doctor@clinic.com"
+                placeholder="you@clinic.com"
                 required
                 className="h-11 rounded-xl border-surface-200 bg-surface-50 px-4 text-sm focus-visible:ring-brand-300"
               />
@@ -194,10 +165,17 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-surface-400 mt-6">
+          <p className="text-center text-sm text-surface-500 mt-6">
+            Need a clinic workspace?{' '}
+            <Link href="/auth/register" className="text-brand-600 hover:text-brand-700 font-medium">
+              Create clinic account
+            </Link>
+          </p>
+
+          <p className="text-center text-sm text-surface-400 mt-2">
             Patient?{' '}
-            <Link href="/patient" className="text-brand-500 hover:text-brand-600 font-medium">
-              Use patient portal →
+            <Link href="/auth/patient-register" className="text-brand-500 hover:text-brand-600 font-medium">
+              Create patient account &rarr;
             </Link>
           </p>
         </div>

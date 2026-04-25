@@ -13,6 +13,10 @@ class ClinicListItem(BaseModel):
     rating: float = Field(examples=[4.6])
     avg_consult_time: int = Field(examples=[8])
     distance_km: float | None = Field(default=None, examples=[1.4])
+    specializations: list[str] = Field(default_factory=list, examples=[["general", "pediatrics"]])
+    is_open: bool = Field(examples=[True])
+    queue_length: int = Field(default=0, examples=[5])
+    est_wait_mins: int = Field(default=0, examples=[30])
 
 
 class DoctorSummary(BaseModel):
