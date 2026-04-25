@@ -65,6 +65,14 @@ Swagger docs:
 http://127.0.0.1:8000/docs
 ```
 
+Every new backend endpoint should include Swagger metadata when it is added:
+
+- `response_model`
+- `summary`
+- `description`
+- important `responses`
+- query/path parameter descriptions
+
 ## 6. Test Main Clinic Endpoints
 
 Nearby clinics:

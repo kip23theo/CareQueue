@@ -12,7 +12,10 @@ from app.models.user import User
 
 app = FastAPI(
     title="CareQueue API",
-    description="Backend starter for the CareQueue project.",
+    description=(
+        "ClinicFlow backend API for clinic discovery, live queue tracking, "
+        "and queue management workflows."
+    ),
     version="0.1.0",
 )
 
@@ -40,11 +43,21 @@ async def shutdown_event() -> None:
     await close_mongo_connection()
 
 
-@app.get("/")
+@app.get(
+    "/",
+    summary="API root",
+    description="Basic root endpoint for confirming the API service is reachable.",
+    tags=["system"],
+)
 def read_root() -> dict[str, str]:
     return {"status": "ok", "service": "CareQueue API"}
 
 
-@app.get("/health")
+@app.get(
+    "/health",
+    summary="Health check",
+    description="Simple health check with no database dependency.",
+    tags=["system"],
+)
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "clinicflow-backend"}
