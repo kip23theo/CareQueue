@@ -62,6 +62,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [googleDemoMessage, setGoogleDemoMessage] = useState<string | null>(
+    null,
+  );
   const nextPath = searchParams.get("next");
   const safeNextPath = nextPath?.startsWith("/") ? nextPath : null;
 
@@ -69,6 +72,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setGoogleDemoMessage(null);
     try {
       const { data } = await authApi.login({ email, password });
       saveAuth(data.access_token, data.user);
@@ -87,6 +91,13 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleDemoLogin = () => {
+    setError(null);
+    setGoogleDemoMessage(
+      "Google login is demo-only right now and not connected yet.",
+    );
   };
 
   return (
@@ -236,6 +247,56 @@ export default function LoginPage() {
                 "Sign in"
               )}
             </Button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-surface-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-surface-400">Or</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGoogleDemoLogin}
+              className={cn(
+                "w-full h-12 rounded-xl font-semibold border-surface-200 text-surface-700",
+                "hover:bg-surface-50",
+              )}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M22.5 12.24c0-.78-.07-1.53-.2-2.24H12v4.24h5.9a5.05 5.05 0 0 1-2.2 3.32v2.76h3.56c2.08-1.92 3.24-4.74 3.24-8.08Z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.93 0 5.38-.97 7.18-2.64l-3.56-2.76c-.97.65-2.2 1.04-3.62 1.04-2.8 0-5.17-1.9-6.02-4.45H2.3v2.84A10.99 10.99 0 0 0 12 23Z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.98 14.19a6.6 6.6 0 0 1 0-4.18V7.17H2.3a11 11 0 0 0 0 9.86l3.68-2.84Z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.37c1.56 0 2.94.54 4.03 1.6l3.01-3C17.37 2.44 14.92 1.5 12 1.5a10.99 10.99 0 0 0-9.7 5.67l3.68 2.84C6.83 7.27 9.2 5.37 12 5.37Z"
+                  fill="#EA4335"
+                />
+              </svg>
+              Continue with Google (Demo)
+            </Button>
+
+            {googleDemoMessage && (
+              <div className="px-4 py-3 rounded-xl bg-surface-50 border border-surface-200 text-surface-600 text-sm">
+                {googleDemoMessage}
+              </div>
+            )}
           </form>
 
           <p className="text-center text-sm text-surface-500 mt-6">
