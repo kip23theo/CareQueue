@@ -55,6 +55,20 @@ export function resolveMediaUrl(value: string | null | undefined): string | null
   return `${BASE_URL}/${normalized}`
 }
 
+export function toStoredMediaPath(value: string | null | undefined): string | null | undefined {
+  if (value === undefined || value === null) return value
+
+  const normalized = value.trim()
+  if (!normalized) return ''
+
+  const backendOrigin = BASE_URL.replace(/\/+$/, '')
+  if (normalized.startsWith(backendOrigin + '/uploads/')) {
+    return normalized.slice(backendOrigin.length)
+  }
+
+  return normalized
+}
+
 function toClinic(raw: unknown): Clinic {
   const c = (raw ?? {}) as Partial<Clinic> & { id?: string; queue_count?: number }
   return {
@@ -396,7 +410,14 @@ export const authApi = {
       return withData(res, normalized)
     }),
   registerClinic: (body: RegisterClinicRequest) =>
-    api.post<unknown>('/auth/register-clinic', body).then((res) => {
+    api.post<unknown>('/auth/register-clinic', {
+      ...body,
+      clinic_image: toStoredMediaPath(body.clinic_image),
+      staff: body.staff?.map((member) => ({
+        ...member,
+        doctor_image: toStoredMediaPath(member.doctor_image),
+      })),
+    }).then((res) => {
       const payload = (res.data ?? {}) as Partial<RegisterClinicResponse>
       const normalized: RegisterClinicResponse = {
         message: payload.message ?? 'Clinic registered',
@@ -406,7 +427,10 @@ export const authApi = {
       return withData(res, normalized)
     }),
   registerStaff: (body: RegisterStaffRequest) =>
-    api.post<unknown>('/auth/register-staff', body).then((res) => {
+    api.post<unknown>('/auth/register-staff', {
+      ...body,
+      doctor_image: toStoredMediaPath(body.doctor_image),
+    }).then((res) => {
       const payload = (res.data ?? {}) as Partial<RegisterStaffResponse>
       const normalized: RegisterStaffResponse = {
         id: payload.id ?? '',
@@ -618,7 +642,10 @@ export const uploadsApi = {
 // ── Clinic admin ────────────────────────────────────────
 export const clinicAdminApi = {
   update: (clinicId: string, body: Partial<Clinic> & { latitude?: number; longitude?: number; google_maps_link?: string }) =>
-    api.patch<Clinic>(`/admin/clinics/${clinicId}`, body),
+    api.patch<Clinic>(`/admin/clinics/${clinicId}`, {
+      ...body,
+      clinic_image: toStoredMediaPath(body.clinic_image),
+    }),
   getAnalytics: (clinicId: string, date?: string) =>
     api.get<ClinicAnalytics>(`/admin/clinics/${clinicId}/analytics`, { params: { date } }),
 }
