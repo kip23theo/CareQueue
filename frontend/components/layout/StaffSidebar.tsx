@@ -47,7 +47,8 @@ const receptionistNav: NavItem[] = [
 ]
 
 const superAdminNav: NavItem[] = [
-  { href: '/super-admin', label: 'Platform', icon: <LayoutDashboard size={18} /> },
+  { href: '/super-admin', label: 'Home', icon: <LayoutDashboard size={18} /> },
+  { href: '/super-admin/feedback', label: 'Platform Feedback', icon: <Star size={18} /> },
 ]
 
 const navMap = {
@@ -103,7 +104,8 @@ export function StaffSidebar({ sseStatus = 'disconnected' }: Props) {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/admin' && item.href !== '/doctor' && item.href !== '/receptionist' && pathname.startsWith(item.href))
+          const isRoleRoot = item.href === '/admin' || item.href === '/doctor' || item.href === '/receptionist' || item.href === '/super-admin'
+          const isActive = pathname === item.href || (!isRoleRoot && pathname.startsWith(item.href))
           return (
             <Button
               key={item.href}
