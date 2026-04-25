@@ -103,11 +103,15 @@ export default function AddWalkinPage() {
             type="text"
             value={parseText}
             onChange={(e) => setParseText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleParse()}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              handleParse()
+            }}
             placeholder="e.g. Rahul Kumar, 25 yrs, fever and cough..."
             className="h-10 flex-1 rounded-xl border-brand-200 bg-white text-sm"
           />
-          <Button onClick={handleParse} disabled={isParsing || !parseText.trim()}
+          <Button type="button" onClick={handleParse} disabled={isParsing || !parseText.trim()}
             className="h-10 px-4 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 disabled:opacity-50 flex items-center gap-2">
             {isParsing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             Parse

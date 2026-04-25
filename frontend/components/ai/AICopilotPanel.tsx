@@ -24,6 +24,8 @@ type MessageTime = {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const TRAVEL_SPEED_KMPH = 25
+const MAX_CONTEXT_CLINICS = 12
 
 const quickPrompts = [
   'Fever - which clinic?',
@@ -32,12 +34,93 @@ const quickPrompts = [
   'Add patient quickly',
 ]
 
+type StoredLocation = {
+  lat: number
+  lng: number
+  label?: string
+}
+
+type StoredClinic = {
+  _id?: string
+  id?: string
+  name?: string
+  address?: string
+  distance_km?: number
+  est_wait_mins?: number
+  queue_length?: number
+  rating?: number
+  is_open?: boolean
+  specializations?: string[]
+}
+
 function currentTime() {
   return new Intl.DateTimeFormat(undefined, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   }).format(new Date())
+}
+
+function parseSessionJson<T>(key: string): T | null {
+  if (typeof window === 'undefined') return null
+  const raw = sessionStorage.getItem(key)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null
+  }
+}
+
+function toNumber(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function estimateReachMins(distanceKm: number | null): number | null {
+  if (distanceKm === null) return null
+  const minutes = Math.round((distanceKm / TRAVEL_SPEED_KMPH) * 60)
+  return Math.max(1, minutes)
+}
+
+function buildClinicContext() {
+  const location = parseSessionJson<StoredLocation>('cf_location')
+  const clinics = parseSessionJson<StoredClinic[]>('cf_nearby_clinics') ?? []
+
+  const clinicRows = clinics
+    .slice(0, MAX_CONTEXT_CLINICS)
+    .map((clinic) => {
+      const distanceKm = toNumber(clinic.distance_km)
+      const rating = toNumber(clinic.rating)
+      const waitMins = toNumber(clinic.est_wait_mins)
+      const queueLength = toNumber(clinic.queue_length)
+      const clinicId = (clinic._id ?? clinic.id ?? '').trim()
+      if (!clinicId) return null
+      return {
+        clinic_id: clinicId,
+        name: clinic.name ?? 'Clinic',
+        address: clinic.address ?? '',
+        distance_km: distanceKm,
+        estimated_reach_mins: estimateReachMins(distanceKm),
+        est_wait_mins: waitMins,
+        queue_length: queueLength,
+        rating,
+        review_signal: rating !== null ? `${rating.toFixed(1)} / 5 based on patient reviews` : null,
+        is_open: clinic.is_open ?? null,
+        specializations: clinic.specializations ?? [],
+      }
+    })
+    .filter((clinic): clinic is NonNullable<typeof clinic> => clinic !== null)
+
+  if (clinicRows.length === 0) return null
+
+  return {
+    generated_at: new Date().toISOString(),
+    user_location: location
+      ? { lat: location.lat, lng: location.lng, label: location.label ?? null }
+      : null,
+    clinics: clinicRows,
+  }
 }
 
 function TypingDots() {
@@ -79,12 +162,14 @@ export default function AICopilotPanel() {
     setIsLoading(true)
 
     try {
+      const clinicContext = buildClinicContext()
       const response = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
           history: messages.map(({ role, content }) => ({ role, content })),
+          clinic_context: clinicContext,
         }),
       })
 

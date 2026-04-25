@@ -95,6 +95,21 @@ def _doctor_display_name(doctor: Doctor | None) -> str:
     return f"Dr. {clean_name}"
 
 
+async def _resolve_doctor_for_clinic(
+    doctor_or_user_id: PydanticObjectId,
+    clinic_id: PydanticObjectId,
+) -> Doctor | None:
+    doctor = await Doctor.get(doctor_or_user_id)
+    if doctor is None:
+        doctor = await Doctor.find_one(
+            Doctor.user_id == doctor_or_user_id,
+            Doctor.clinic_id == clinic_id,
+        )
+    if doctor is None or doctor.clinic_id != clinic_id:
+        return None
+    return doctor
+
+
 class AddWalkinRequest(BaseModel):
     clinic_id: str
     doctor_id: str
@@ -295,20 +310,20 @@ async def add_walkin(payload: AddWalkinRequest) -> dict[str, Any]:
 )
 async def call_next(payload: QueueActionRequest) -> dict[str, Any]:
     clinic_id = _parse_object_id(payload.clinic_id, "clinic_id")
-    doctor_id = _parse_object_id(payload.doctor_id, "doctor_id")
+    doctor_or_user_id = _parse_object_id(payload.doctor_id, "doctor_id")
 
     clinic = await Clinic.get(clinic_id)
     if clinic is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic not found")
 
-    doctor = await Doctor.get(doctor_id)
-    if doctor is None or doctor.clinic_id != clinic_id:
+    doctor = await _resolve_doctor_for_clinic(doctor_or_user_id, clinic_id)
+    if doctor is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
 
     today = _now().date().isoformat()
     next_token = await QueueToken.find(
         QueueToken.clinic_id == clinic_id,
-        QueueToken.doctor_id == doctor_id,
+        QueueToken.doctor_id == doctor.id,
         QueueToken.date == today,
         QueueToken.status == QueueStatus.WAITING,
     ).sort("+position").first_or_none()

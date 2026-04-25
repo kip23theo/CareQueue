@@ -187,13 +187,18 @@ export default function ReceptionistPage() {
                 type="text"
                 value={parseText}
                 onChange={(e) => setParseText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleParse()}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return
+                  e.preventDefault()
+                  handleParse()
+                }}
                 placeholder="Rahul, 25, fever..."
                 className="h-10 flex-1 rounded-xl border-surface-200 text-sm bg-surface-50"
               />
               <Button
+                type="button"
                 onClick={handleParse}
-                disabled={isParsing}
+                disabled={isParsing || !parseText.trim()}
                 size="icon"
                 className="h-10 w-10 rounded-xl bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50"
               >

@@ -433,21 +433,24 @@ export default function PatientDashboardPage() {
 
       <Tabs defaultValue="home" className="space-y-4">
         <TabsList className="h-auto w-full flex-nowrap sm:flex-wrap justify-start rounded-2xl border border-surface-200 bg-white p-1.5 overflow-x-auto">
-          <TabsTrigger value="home" className="h-9 shrink-0 gap-1.5 rounded-xl px-3.5 text-xs sm:text-sm data-[state=active]:bg-brand-500 data-[state=active]:text-white">
+          <TabsTrigger value="home" className="h-10 shrink-0 gap-2 rounded-xl px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-brand-500 data-[state=active]:text-white">
             <Home size={14} />
             Home
           </TabsTrigger>
-          <TabsTrigger value="bookings" className="h-9 shrink-0 gap-1.5 rounded-xl px-3.5 text-xs sm:text-sm data-[state=active]:bg-brand-500 data-[state=active]:text-white">
+          <TabsTrigger value="bookings" className="h-10 shrink-0 gap-2 rounded-xl px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-brand-500 data-[state=active]:text-white">
             <CalendarClock size={14} />
-            Current Bookings
+            <span className="sm:hidden">Bookings</span>
+            <span className="hidden sm:inline">Current Bookings</span>
           </TabsTrigger>
-          <TabsTrigger value="visits" className="h-9 shrink-0 gap-1.5 rounded-xl px-3.5 text-xs sm:text-sm data-[state=active]:bg-brand-500 data-[state=active]:text-white">
+          <TabsTrigger value="visits" className="h-10 shrink-0 gap-2 rounded-xl px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-brand-500 data-[state=active]:text-white">
             <History size={14} />
-            Visited Clinics
+            <span className="sm:hidden">Visits</span>
+            <span className="hidden sm:inline">Visited Clinics</span>
           </TabsTrigger>
-          <TabsTrigger value="reviews" className="h-9 shrink-0 gap-1.5 rounded-xl px-3.5 text-xs sm:text-sm data-[state=active]:bg-brand-500 data-[state=active]:text-white">
+          <TabsTrigger value="reviews" className="h-10 shrink-0 gap-2 rounded-xl px-4 text-xs sm:text-sm whitespace-nowrap data-[state=active]:bg-brand-500 data-[state=active]:text-white">
             <Star size={14} />
-            My Reviews
+            <span className="sm:hidden">Reviews</span>
+            <span className="hidden sm:inline">My Reviews</span>
           </TabsTrigger>
         </TabsList>
 

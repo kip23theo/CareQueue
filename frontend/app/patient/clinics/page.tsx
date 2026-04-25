@@ -42,6 +42,8 @@ const SORTS = [
   { value: 'wait', label: 'Shortest wait' },
   { value: 'rating', label: 'Highest rated' },
 ]
+const NEARBY_RADIUS_METERS = 5000
+const NEARBY_RADIUS_KM = NEARBY_RADIUS_METERS / 1000
 
 function SkeletonCard() {
   return (
@@ -94,7 +96,11 @@ export default function ClinicsPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const { data } = await clinicsApi.getNearby({ lat: location.lat, lng: location.lng, radius: 5000 })
+        const { data } = await clinicsApi.getNearby({
+          lat: location.lat,
+          lng: location.lng,
+          radius: NEARBY_RADIUS_METERS,
+        })
         setNearbyClinics(data)
       } catch (err) {
         if (axios.isAxiosError(err)) {
@@ -206,11 +212,14 @@ export default function ClinicsPage() {
       {!location && (
         <Card className="rounded-3xl border border-surface-200 bg-white p-5 shadow-sm mb-5">
           <Badge className="rounded-full bg-brand-100 text-brand-700 border-transparent text-xs mb-3">
-            Location Required
+            Select Location
           </Badge>
-          <h1 className="text-xl font-bold font-heading text-surface-900">Enable location to explore nearby clinics</h1>
+          <h1 className="text-xl font-bold font-heading text-surface-900">
+            Please select a location to view clinic listings
+          </h1>
           <p className="text-sm text-surface-600 mt-1.5">
-            Use GPS for accurate results or search your area manually.
+            We list clinics within {NEARBY_RADIUS_KM} km of your selected location. Use GPS for accurate results or
+            search your area manually.
           </p>
 
           <Button
@@ -288,6 +297,9 @@ export default function ClinicsPage() {
               Showing clinics near <span className="font-medium text-surface-700">{activeLocationLabel || 'your selected area'}</span>
             </p>
           </div>
+          <p className="text-[11px] text-surface-400 mb-2">
+            Listing clinics within {NEARBY_RADIUS_KM} km radius.
+          </p>
 
           <div className="flex gap-2">
             <div className="relative flex-1">

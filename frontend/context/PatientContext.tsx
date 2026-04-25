@@ -21,6 +21,16 @@ interface PatientContextValue {
 const PatientContext = createContext<PatientContextValue | null>(null)
 
 export function PatientProvider({ children }: { children: ReactNode }) {
+  const [nearbyClinics, setNearbyClinicsState] = useState<Clinic[]>(() => {
+    if (typeof window === 'undefined') return []
+    const saved = sessionStorage.getItem('cf_nearby_clinics')
+    if (!saved) return []
+    try {
+      return JSON.parse(saved) as Clinic[]
+    } catch {
+      return []
+    }
+  })
   const [location, setLocationState] = useState<Location | null>(() => {
     if (typeof window === 'undefined') return null
     const savedLoc = sessionStorage.getItem('cf_location')
@@ -31,7 +41,6 @@ export function PatientProvider({ children }: { children: ReactNode }) {
       return null
     }
   })
-  const [nearbyClinics, setNearbyClinics] = useState<Clinic[]>([])
   const [myToken, setMyTokenState] = useState<QueueToken | null>(() => {
     if (typeof window === 'undefined') return null
     const savedToken = localStorage.getItem('cf_my_token')
@@ -46,6 +55,11 @@ export function PatientProvider({ children }: { children: ReactNode }) {
   const setLocation = (loc: Location) => {
     setLocationState(loc)
     sessionStorage.setItem('cf_location', JSON.stringify(loc))
+  }
+
+  const setNearbyClinics = (clinics: Clinic[]) => {
+    setNearbyClinicsState(clinics)
+    sessionStorage.setItem('cf_nearby_clinics', JSON.stringify(clinics))
   }
 
   const setMyToken = (token: QueueToken | null) => {

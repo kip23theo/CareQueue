@@ -65,7 +65,7 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: list[Message] = Field(default_factory=list)
-    clinic_context: dict[str, Any] | None = None
+    clinic_context: dict[str, Any] | list[dict[str, Any]] | None = None
 
 
 class ChatResponse(BaseModel):

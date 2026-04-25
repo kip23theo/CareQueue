@@ -23,11 +23,6 @@ const quickLinks = [
     label: 'Clinics',
     icon: Compass,
   },
-  {
-    href: '/patient/notifications',
-    label: 'Alerts',
-    icon: Bell,
-  },
 ]
 
 export function PatientNav({ myTokenId }: Props) {
@@ -94,22 +89,22 @@ export function PatientNav({ myTokenId }: Props) {
               <Button
                 asChild
                 variant="outline"
-                className="h-9 rounded-full border-surface-300 px-2 text-xs font-semibold text-surface-700 sm:px-3"
+                size="icon"
+                className="h-9 w-9 rounded-full border-surface-300 text-surface-700"
               >
-                <Link href="/patient/notifications">
+                <Link href="/patient/notifications" aria-label="Alerts">
                   <Bell size={14} />
-                  <span className="hidden sm:inline">Alerts</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                className="h-9 rounded-full border-surface-300 px-2 text-xs font-semibold text-surface-700 sm:px-3"
+                size="icon"
+                className="h-9 w-9 rounded-full border-surface-300 text-surface-700"
               >
-                <Link href="/patient/feedback">
+                <Link href="/patient/feedback" aria-label="Rate Us">
                   <Star size={14} />
-                  <span className="hidden sm:inline">Rate Us</span>
                 </Link>
               </Button>
 

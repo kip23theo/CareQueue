@@ -85,15 +85,62 @@ def _heuristic_clinic_score(symptoms: str, clinic: dict[str, Any]) -> float:
     return round(weighted * 100.0, 2)
 
 
-async def ai_chat(message: str, clinic_context: Optional[dict] = None) -> str:
+def _estimate_reach_mins(distance_km: Any) -> int | None:
+    distance = _to_float(distance_km, fallback=-1.0)
+    if distance < 0:
+        return None
+    # Approximate city traffic speed for patient-facing ETA.
+    minutes = int(round((distance / 25.0) * 60.0))
+    return max(1, minutes)
+
+
+def _normalize_clinic_context(clinic_context: Any) -> dict[str, Any] | None:
+    if clinic_context is None:
+        return None
+
+    if isinstance(clinic_context, dict):
+        normalized: dict[str, Any] = dict(clinic_context)
+    elif isinstance(clinic_context, list):
+        normalized = {"clinics": clinic_context}
+    else:
+        return {"raw_context": str(clinic_context)}
+
+    clinics = normalized.get("clinics")
+    if isinstance(clinics, list):
+        clinic_rows: list[dict[str, Any]] = []
+        for clinic in clinics[:20]:
+            if not isinstance(clinic, dict):
+                continue
+            row = dict(clinic)
+            if row.get("estimated_reach_mins") is None:
+                reach_mins = _estimate_reach_mins(row.get("distance_km"))
+                if reach_mins is not None:
+                    row["estimated_reach_mins"] = reach_mins
+            rating = _to_float(row.get("rating"), fallback=-1.0)
+            if rating >= 0 and not row.get("review_signal"):
+                row["review_signal"] = f"{rating:.1f}/5 from patient reviews"
+            clinic_rows.append(row)
+        normalized["clinics"] = clinic_rows
+
+    return normalized
+
+
+async def ai_chat(message: str, clinic_context: Optional[dict[str, Any] | list[dict[str, Any]]] = None) -> str:
+    normalized_context = _normalize_clinic_context(clinic_context)
     system = (
         "You are ClinicFlow AI in CareQueue. Help patients understand clinic wait times, "
-        "and choose care centers safely. Keep responses concise and friendly. "
+        "reach times, and review quality to choose care centers safely. "
+        "Keep responses concise and friendly. "
         "If symptoms suggest emergency risk (like chest pain, severe breathing trouble, stroke signs), "
-        "recommend urgent in-person care immediately."
+        "recommend urgent in-person care immediately. "
+        "When live clinic context is provided, treat it as source of truth for numbers and clinic names. "
+        "Do not invent or guess clinic data. If a requested value is missing, clearly say it is unavailable."
     )
-    if clinic_context:
-        system += f"\n\nClinic context:\n{json.dumps(clinic_context)}"
+    if normalized_context:
+        system += (
+            "\n\nLive clinic context (JSON):\n"
+            f"{json.dumps(normalized_context, ensure_ascii=True)}"
+        )
 
     try:
         client = get_openai_client()
