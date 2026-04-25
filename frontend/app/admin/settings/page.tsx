@@ -138,7 +138,6 @@ export default function AdminSettingsPage() {
         payload,
       });
       await clinicAdminApi.update(activeClinicId, payload);
-      console.log("Saved clinic settings:", payload);
 
       success("Clinic settings saved");
     } catch (err) {
