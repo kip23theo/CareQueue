@@ -12,6 +12,48 @@ import axios from "axios";
 import { Eye, EyeOff, Activity, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+function toErrorMessage(data: unknown, fallback: string): string {
+  const detail =
+    data && typeof data === "object" && "detail" in data
+      ? (data as { detail?: unknown }).detail
+      : data;
+
+  if (typeof detail === "string") return detail;
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (!item || typeof item !== "object") return null;
+
+        const msg =
+          "msg" in item && typeof item.msg === "string" ? item.msg : null;
+        if (!msg) return null;
+
+        const loc =
+          "loc" in item && Array.isArray(item.loc)
+            ? item.loc.map((part) => String(part)).join(".")
+            : null;
+
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .filter((value): value is string => Boolean(value));
+
+    if (messages.length > 0) return messages.join(", ");
+  }
+
+  if (detail && typeof detail === "object") {
+    if ("msg" in detail && typeof detail.msg === "string") return detail.msg;
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,7 +77,7 @@ export default function LoginPage() {
       else router.push("/patient/dashboard");
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.detail ?? "Invalid email or password");
+        setError(toErrorMessage(err.response?.data, "Invalid email or password"));
       } else {
         setError("Something went wrong");
       }
