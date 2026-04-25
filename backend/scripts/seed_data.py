@@ -17,6 +17,7 @@ from app.models.doctor import Doctor
 from app.models.enums import (
     ClinicVerificationStatus,
     MedicalDocumentType,
+    NotificationChannel,
     QueueStatus,
     ReviewTargetType,
     UserRole,
@@ -60,6 +61,7 @@ async def seed_data() -> None:
             ],
         )
 
+        await Notification.find({"message": {"$regex": r"^Demo "}}).delete()
         await MedicalDocument.find({"title": {"$regex": r"^Demo "}}).delete()
         await MedicalHistory.find({"title": {"$regex": r"^Demo Visit"}}).delete()
         await Review.find({"patient_name": {"$regex": r"^Demo Patient"}}).delete()
@@ -68,51 +70,77 @@ async def seed_data() -> None:
         await Clinic.find({"phone": {"$regex": r"^\+91110000"}}).delete()
         await User.find({"email": {"$regex": r"@demo\.carequeue\.local$"}}).delete()
 
-        clinics = [
-            Clinic(
-                name="Demo City Clinic",
-                location={"type": "Point", "coordinates": [77.2090, 28.6139]},
-                address="Connaught Place, New Delhi",
-                phone="+911100000001",
-                specializations=["general", "fever", "family medicine"],
-                opening_hours={"mon_sat": "09:00-18:00"},
-                avg_consult_time=8,
-                is_open=True,
-                rating=4.5,
-                delay_buffer=5,
-                verification_status=ClinicVerificationStatus.APPROVED,
-            ),
-            Clinic(
-                name="Demo Care Plus",
-                location={"type": "Point", "coordinates": [77.2300, 28.6200]},
-                address="Barakhamba Road, New Delhi",
-                phone="+911100000002",
-                specializations=["pediatrics", "general"],
-                opening_hours={"mon_sat": "10:00-19:00"},
-                avg_consult_time=10,
-                is_open=True,
-                rating=4.3,
-                delay_buffer=3,
-                verification_status=ClinicVerificationStatus.APPROVED,
-            ),
-            Clinic(
-                name="Demo Health Hub",
-                location={"type": "Point", "coordinates": [77.1900, 28.6000]},
-                address="Lodhi Road, New Delhi",
-                phone="+911100000003",
-                specializations=["orthopedics", "general"],
-                opening_hours={"mon_sat": "08:30-17:30"},
-                avg_consult_time=12,
-                is_open=False,
-                rating=4.2,
-                delay_buffer=0,
-                verification_status=ClinicVerificationStatus.APPROVED,
-            ),
-        ]
+        clinic_one = Clinic(
+            name="Demo City Clinic",
+            location={"type": "Point", "coordinates": [77.2090, 28.6139]},
+            address="Connaught Place, New Delhi",
+            phone="+911100000001",
+            specializations=["general", "fever", "family medicine"],
+            opening_hours={"mon_sat": "09:00-18:00"},
+            avg_consult_time=8,
+            is_open=True,
+            rating=4.5,
+            delay_buffer=5,
+            verification_status=ClinicVerificationStatus.APPROVED,
+        )
+        clinic_two = Clinic(
+            name="Demo Care Plus",
+            location={"type": "Point", "coordinates": [77.2300, 28.6200]},
+            address="Barakhamba Road, New Delhi",
+            phone="+911100000002",
+            specializations=["pediatrics", "general"],
+            opening_hours={"mon_sat": "10:00-19:00"},
+            avg_consult_time=10,
+            is_open=True,
+            rating=4.3,
+            delay_buffer=3,
+            verification_status=ClinicVerificationStatus.APPROVED,
+        )
+        clinic_three = Clinic(
+            name="Demo Health Hub",
+            location={"type": "Point", "coordinates": [77.1900, 28.6000]},
+            address="Lodhi Road, New Delhi",
+            phone="+911100000003",
+            specializations=["orthopedics", "general"],
+            opening_hours={"mon_sat": "08:30-17:30"},
+            avg_consult_time=12,
+            is_open=False,
+            rating=4.2,
+            delay_buffer=0,
+            verification_status=ClinicVerificationStatus.APPROVED,
+        )
+        clinic_pending = Clinic(
+            name="Demo Pending Clinic",
+            location={"type": "Point", "coordinates": [77.2500, 28.6500]},
+            address="Karol Bagh, New Delhi",
+            phone="+911100000004",
+            specializations=["general"],
+            opening_hours={"mon_sat": "09:00-17:00"},
+            avg_consult_time=9,
+            is_open=False,
+            rating=0.0,
+            delay_buffer=0,
+            verification_status=ClinicVerificationStatus.PENDING,
+        )
+        clinic_rejected = Clinic(
+            name="Demo Rejected Clinic",
+            location={"type": "Point", "coordinates": [77.1600, 28.5800]},
+            address="Nizamuddin, New Delhi",
+            phone="+911100000005",
+            specializations=["general"],
+            opening_hours={"mon_sat": "09:00-17:00"},
+            avg_consult_time=9,
+            is_open=False,
+            rating=0.0,
+            delay_buffer=0,
+            verification_status=ClinicVerificationStatus.REJECTED,
+            rejection_reason="Missing license document",
+        )
+
+        clinics = [clinic_one, clinic_two, clinic_three, clinic_pending, clinic_rejected]
         for clinic in clinics:
             await clinic.insert()
 
-        clinic_one, clinic_two, clinic_three = clinics
         demo_password_hash = hash_password("password123")
 
         admin_user = User(
@@ -139,6 +167,46 @@ async def seed_data() -> None:
             password_hash=demo_password_hash,
             is_active=True,
         )
+        admin_user_two = User(
+            clinic_id=clinic_two.id,
+            role=UserRole.ADMIN,
+            name="Demo Admin Two",
+            email="admin2@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        doctor_user_two = User(
+            clinic_id=clinic_two.id,
+            role=UserRole.DOCTOR,
+            name="Demo Doctor Two",
+            email="doctor2@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        receptionist_user_two = User(
+            clinic_id=clinic_two.id,
+            role=UserRole.RECEPTIONIST,
+            name="Demo Receptionist Two",
+            email="receptionist2@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        pending_admin_user = User(
+            clinic_id=clinic_pending.id,
+            role=UserRole.ADMIN,
+            name="Demo Pending Admin",
+            email="pendingadmin@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
+        rejected_admin_user = User(
+            clinic_id=clinic_rejected.id,
+            role=UserRole.ADMIN,
+            name="Demo Rejected Admin",
+            email="rejectedadmin@demo.carequeue.local",
+            password_hash=demo_password_hash,
+            is_active=True,
+        )
         super_admin_user = User(
             clinic_id=None,
             role=UserRole.SUPER_ADMIN,
@@ -156,7 +224,18 @@ async def seed_data() -> None:
             password_hash=demo_password_hash,
             is_active=True,
         )
-        users = [admin_user, doctor_user, receptionist_user, super_admin_user, patient_user]
+        users = [
+            admin_user,
+            doctor_user,
+            receptionist_user,
+            admin_user_two,
+            doctor_user_two,
+            receptionist_user_two,
+            pending_admin_user,
+            rejected_admin_user,
+            super_admin_user,
+            patient_user,
+        ]
         for user in users:
             await user.insert()
 
@@ -180,7 +259,7 @@ async def seed_data() -> None:
             ),
             Doctor(
                 clinic_id=clinic_two.id,
-                user_id=PydanticObjectId(),
+                user_id=doctor_user_two.id,
                 name="Demo Dr. Neha Kapoor",
                 specialization="General Physician",
                 avg_consult_mins=9,
@@ -208,35 +287,71 @@ async def seed_data() -> None:
 
         now = datetime.now(timezone.utc)
         today = now.date().isoformat()
-        queue_tokens = [
-            QueueToken(
-                clinic_id=clinic_one.id,
-                doctor_id=doctors[0].id,
-                token_number=token_number,
-                patient_name=f"Demo Patient {position}",
-                patient_phone=f"+91000000{position:04d}",
-                patient_age=22 + position,
-                symptoms="Fever and headache",
-                status=status,
-                position=position,
-                est_wait_mins=position * clinic_one.avg_consult_time,
-                joined_at=now - timedelta(minutes=position * 6),
-                date=today,
-            )
-            for position, (token_number, status) in enumerate(
-                [
-                    (101, QueueStatus.IN_CONSULTATION),
-                    (102, QueueStatus.CALLED),
-                    (103, QueueStatus.WAITING),
-                    (104, QueueStatus.WAITING),
-                    (105, QueueStatus.EMERGENCY),
-                    (106, QueueStatus.SKIPPED),
-                    (107, QueueStatus.WAITING),
-                    (108, QueueStatus.WAITING),
-                ],
-                start=1,
-            )
+        queue_tokens = []
+        clinic_one_statuses = [
+            (101, QueueStatus.IN_CONSULTATION),
+            (102, QueueStatus.CALLED),
+            (103, QueueStatus.WAITING),
+            (104, QueueStatus.WAITING),
+            (105, QueueStatus.EMERGENCY),
+            (106, QueueStatus.SKIPPED),
+            (107, QueueStatus.WAITING),
+            (108, QueueStatus.WAITING),
+            (109, QueueStatus.COMPLETED),
+            (110, QueueStatus.NO_SHOW),
+            (111, QueueStatus.CANCELLED),
         ]
+        for position, (token_number, status) in enumerate(clinic_one_statuses, start=1):
+            queue_tokens.append(
+                QueueToken(
+                    clinic_id=clinic_one.id,
+                    doctor_id=doctors[0].id,
+                    token_number=token_number,
+                    patient_name=f"Demo Patient {position}",
+                    patient_phone=f"+91000000{position:04d}",
+                    patient_age=22 + position,
+                    symptoms="Fever and headache",
+                    status=status,
+                    position=position,
+                    est_wait_mins=position * clinic_one.avg_consult_time,
+                    joined_at=now - timedelta(minutes=position * 6),
+                    date=today,
+                )
+            )
+
+        queue_tokens.extend(
+            [
+                QueueToken(
+                    clinic_id=clinic_two.id,
+                    doctor_id=doctors[2].id,
+                    token_number=201,
+                    patient_name="Demo Patient Secondary 1",
+                    patient_phone="+910000009001",
+                    patient_age=30,
+                    symptoms="Allergy flare up",
+                    status=QueueStatus.WAITING,
+                    position=1,
+                    est_wait_mins=clinic_two.avg_consult_time,
+                    joined_at=now - timedelta(minutes=10),
+                    date=today,
+                ),
+                QueueToken(
+                    clinic_id=clinic_two.id,
+                    doctor_id=doctors[2].id,
+                    token_number=202,
+                    patient_name="Demo Patient Secondary 2",
+                    patient_phone="+910000009002",
+                    patient_age=34,
+                    symptoms="Skin rash",
+                    status=QueueStatus.CALLED,
+                    position=2,
+                    est_wait_mins=0,
+                    joined_at=now - timedelta(minutes=20),
+                    date=today,
+                ),
+            ]
+        )
+
         for queue_token in queue_tokens:
             await queue_token.insert()
 
@@ -285,7 +400,7 @@ async def seed_data() -> None:
                 patient_user_id=patient_user.id,
                 clinic_id=clinic_two.id,
                 medical_history_id=history_entries[1].id,
-                uploaded_by_user_id=doctor_user.id,
+                uploaded_by_user_id=doctor_user_two.id,
                 title="Demo Allergy Prescription",
                 document_type=MedicalDocumentType.PRESCRIPTION,
                 file_url="https://example.com/docs/demo-allergy-prescription.pdf",
@@ -330,12 +445,30 @@ async def seed_data() -> None:
         for review in reviews:
             await review.insert()
 
+        notifications = [
+            Notification(
+                token_id=queue_tokens[1].id,
+                clinic_id=clinic_one.id,
+                channel=NotificationChannel.SMS,
+                message="Demo SMS: Please proceed to consultation room 2.",
+            ),
+            Notification(
+                token_id=queue_tokens[10].id,
+                clinic_id=clinic_one.id,
+                channel=NotificationChannel.WHATSAPP,
+                message="Demo WhatsApp: Your token was marked as cancelled.",
+            ),
+        ]
+        for notification in notifications:
+            await notification.insert()
+
         print(
             "Seed data inserted: "
             f"{len(clinics)} clinics, {len(doctors)} doctors, "
             f"{len(users)} users, "
             f"{len(queue_tokens)} queue tokens, "
-            f"{len(history_entries)} history entries, {len(documents)} documents"
+            f"{len(history_entries)} history entries, {len(documents)} documents, "
+            f"{len(reviews)} reviews, {len(notifications)} notifications"
         )
         print("\n--- IDs for Swagger testing ---")
         for c in clinics:
@@ -347,12 +480,17 @@ async def seed_data() -> None:
                 f"  token:  {qt.id}  "
                 f"(#{qt.token_number} {qt.status.value} pos={qt.position})"
             )
-        print("\nDemo logins:")
-        print("  admin@demo.carequeue.local / password123")
-        print("  doctor@demo.carequeue.local / password123")
-        print("  receptionist@demo.carequeue.local / password123")
-        print("  superadmin@demo.carequeue.local / password123")
-        print("  patient@demo.carequeue.local / password123")
+        print("\nDemo logins (password for all: password123)")
+        print("  ✅ superadmin@demo.carequeue.local      -> Super Admin panel")
+        print("  ✅ admin@demo.carequeue.local           -> Clinic 1 Admin panel")
+        print("  ✅ doctor@demo.carequeue.local          -> Clinic 1 Doctor panel")
+        print("  ✅ receptionist@demo.carequeue.local    -> Clinic 1 Reception panel")
+        print("  ✅ admin2@demo.carequeue.local          -> Clinic 2 Admin panel")
+        print("  ✅ doctor2@demo.carequeue.local         -> Clinic 2 Doctor panel")
+        print("  ✅ receptionist2@demo.carequeue.local   -> Clinic 2 Reception panel")
+        print("  ✅ patient@demo.carequeue.local         -> Patient dashboard")
+        print("  ⛔ pendingadmin@demo.carequeue.local    -> Login blocked (pending verification)")
+        print("  ⛔ rejectedadmin@demo.carequeue.local   -> Login blocked (rejected verification)")
     finally:
         client.close()
 
