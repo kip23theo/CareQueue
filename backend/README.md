@@ -1,52 +1,43 @@
 # CareQueue Backend
 
-FastAPI backend starter for CareQueue.
+FastAPI backend for CareQueue — multi-tenant clinic queue management with AI features.
 
-## Demo Setup
+## Quick Start
 
-1. Create and activate a virtual environment:
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your MongoDB URI and OpenAI key
+python -m app.main
+```
 
-   ```bash
-   cd backend
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+Swagger docs: `http://127.0.0.1:8000/docs`
 
-2. Install dependencies:
+## API Domains
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Create a local environment file:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-   Then set `PORT` in `backend/.env` if you want to run on a custom port.
-
-4. Run the development server:
-
-   ```bash
-   python -m app.main
-   ```
-
-5. Open the API docs:
-
-   ```text
-   http://127.0.0.1:<PORT>/docs
-   ```
+| Domain | Prefix | Endpoints |
+| --- | --- | --- |
+| Auth | `/auth` | login, register-clinic, register-staff, register-patient, bootstrap-super-admin, refresh |
+| Clinics | `/clinics` | nearby, detail, live queue, doctors, SSE |
+| Tokens | `/tokens` | join, status, cancel |
+| Admin | `/admin` | queue, add walk-in, call next, skip, emergency, start, complete, no-show, clinic update, analytics |
+| Super Admin | `/super-admin` | overview, list clinics, verify clinic, list users |
+| Doctors | `/doctors` | queue, availability, delay |
+| Patients | `/patients` | dashboard, medical history, documents |
+| Notifications | `/notifications` | send, log |
+| Reviews | `/reviews` | create, list by clinic/doctor/patient, summary |
+| AI | `/ai` | chat, parse-patient, recommend (stubbed), predict-wait (stubbed) |
 
 ## Shared Database
 
-The backend uses the shared MongoDB Atlas database from `backend/.env`.
-Do not run database init or seed scripts during normal setup unless the backend owner asks.
-See the runbook for the current team workflow.
+Uses shared MongoDB Atlas. Do not run `seed_data.py` without coordinating with the team.
 
 ## Documentation
 
-- API: ./docs/api.md
-- Schema: ./docs/schema.md
-- Architecture: ./docs/architecture.md
-- Runbook: ./docs/runbook.md
+- API: [docs/api.md](docs/api.md)
+- Schema: [docs/schema.md](docs/schema.md)
+- Architecture: [docs/architecture.md](docs/architecture.md)
+- Runbook: [docs/runbook.md](docs/runbook.md)
