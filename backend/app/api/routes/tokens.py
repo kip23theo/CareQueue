@@ -58,16 +58,6 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Doctor not found",
             )
-    else:
-        doctor = await Doctor.find(
-            Doctor.clinic_id == clinic_id,
-            {"is_available": True},
-        ).first_or_none()
-        if doctor is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Doctor not found",
-            )
 
     now = datetime.now(timezone.utc)
     today = now.date().isoformat()
@@ -90,7 +80,7 @@ async def join_queue(request: JoinQueueRequest) -> JoinQueueResponse:
 
     token = QueueToken(
         clinic_id=clinic_id,
-        doctor_id=doctor.id,
+        doctor_id=doctor.id if doctor else None,
         token_number=token_number,
         patient_name=request.patient_name,
         patient_phone=request.patient_phone,
